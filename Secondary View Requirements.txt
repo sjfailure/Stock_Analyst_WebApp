@@ -1,0 +1,11 @@
+Secondary view display:
+When the user selects a company from the main view, the app should direct the user to  new secondary view, displaying the following information on separate graphs 
+
+1. The company name (no graphics required, logo would be cool but is not needed for MVP).
+2.1 (if available) Line graph displaying price changes over the current day (don't know if APIs have this granular detail available).
+2. Line graph of prices over the past 7 days. (increases in green, decreases in red).
+3. Line graph of prices over the past 31 days. (increases in green, decreases in red).
+4. Line graph of prices over the past year (365 days), (increases in green, decreases in red).
+
+
+* Stock comparison option, way to show performance of 2 (or more apps) at once for comparison.

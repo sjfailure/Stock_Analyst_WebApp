@@ -1,0 +1,6 @@
+Goals:
+(MVP) A functioning web application that provides insights into past market behavior for a series of stock market listed companies. Should display information and trends with a series of graphs (matplotlib).
+
+Additional features:
+- ML analysis of stock data, offering predictions. (scikit-learn or tesseract)
+- Enhance ML component with financial news information, ideally acquired ethically through APIs, webscraping is a viable solution.

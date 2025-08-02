@@ -1,0 +1,11 @@
+Main View
+
+Title for webapp: Mos' Stock Analyst 
+
+First Graph: each stock price for followed companies.
+Selecting the company name or price bullet on graph > open company-specific view.
+
+Second graph: show amount of change for each company stock price for the day, green for positive, red for negative.
+SAME INTERACTION CONDITIONS: Selecting the company name or price bullet on graph > open company-specific view.
+
+Third graph: dumb insights graph. If a company's stock price has seen exclusive gains or losses (within a threshold/timeframe to be determined) or a sudden extreme rise or drop (again, threshold to be determined), it will appear on this graph, amount of change, green for positive, red for negative, timeframe listed next to company information.

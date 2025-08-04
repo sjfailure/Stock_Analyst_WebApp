@@ -1,0 +1,21 @@
+FK[*] = Foreign Key [table name and column]
+PK = Primary Key
+
+DataPoints
+    id - INT (PK)
+    company_id - INT (FK[Companies/id])
+    date - INT (FK[Dates/id])
+    open - REAL
+    close - REAL
+    high - REAL
+    low - REAL
+    volume - REAL
+
+Companies
+    id - INT (PK)
+    symbol - TEXT
+    company_name - TEXT
+
+Dates
+    id - INT (PK)
+    date - TEXT

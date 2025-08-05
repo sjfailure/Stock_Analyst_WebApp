@@ -1,0 +1,39 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mos' Stock Analysis</title>
+    <link rel="stylesheet" href="{% static 'stock_analyst/css/style.css' %}">
+
+</head>
+<body>
+    <header>
+        <h1>Stamos Martin's Stock Analyst Web App</h1>
+    </header>
+
+    <main>
+      <div style="width: 800px;"><canvas id="main_highs"></canvas></div>
+
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script src="{% static 'stock_analyst/js/main_all_highs.js' %}"></script>
+        <section>
+            <h2>About</h2>
+            <p>This is a sample project to demonstrate my development capabilities. For further information, please reach out to me by <a href="mailto:sj_martin2023@hotmail.com">email</a>.</p>
+        </section>
+
+        <section>
+            <h2>Content</h2>
+            <p>Add your content here.</p>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Stamos Martin. All rights reserved.</p>
+    </footer>
+
+    <script src="{% static 'stock_analyst/js/script.js' %}"></script>
+</body>
+</html>

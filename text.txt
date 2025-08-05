@@ -1,2 +1,14 @@
-Let's undo the veil a bit and see if it helps. The base directory if "Stock_Analyst_Webapp." Within it are four subdirectories: "model," "mvp_stock_app," "staticfiles," and "stock_analyst." "stock_analyst" is the core app of the project and "mvp_stock_app" is the Django project directory. I chose to handle all database functionality manually, separating the model from the views (and controller), putting all database and API administration materials in the "model" directory.
-The time has come to start to marry to two pieces by connecting the model to the controller and projecting views from it. The function "get_highs_for_main_view()" is in the DatabaseAdmin.py file in the model directory. I'm trying to access this function in the "stock_analyst/views.py" file so that the template view can call data from the model. Surely there is an easy way to achieve this.
+I did some logging and I've found a weird and unexplainable problem. When I run the data_wrangling_for_main() function (and it's helpers) in a Python instance in Powershell, they work correctly, gather the desired data and everything is fine. When I run the Django server and make the URL call to that activates the function, I consistently get an error.
+
+This is a helper function to data_wrangling_for_main():
+def get_company_id(company_name):
+    print(f"TEST LOG get_company_id(): company_name={company_name}")
+    query = "SELECT id FROM Companies WHERE company_name=?"
+    answer = select_query(query, (company_name,))
+    print(f'TEST LOG get_company_id(), answer = {answer}')
+    if not answer:
+        raise ValueError(f'Database yielded not data for query "{query}" ?="{company_name}"')
+    return answer[0][0]
+
+
+when data_wrangling_for_main() or this function are run independently, it works just fine. When the server is running, the custom ValueError is consistently triggered. What are your thoughts? I have an idea but don't want to taint your initial speculation.

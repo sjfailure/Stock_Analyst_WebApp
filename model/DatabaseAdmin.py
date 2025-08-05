@@ -2,6 +2,7 @@ import logging
 import sqlite3
 import os
 
+from django.db.models.functions import JSONObject
 
 db_name = 'stock_data_db.db'
 
@@ -123,7 +124,7 @@ def add_time_series_daily_entry(db_cursor, json_obj):
     symbol = json_obj['Meta Data']['2. Symbol'].upper()
     # company_name = json_obj['']
     if not check_data_point_exists(get_cursor(get_conn()), "Companies", "symbol", symbol):
-        insert_query(f"INSERT INTO Companies(symbol, company_name) VALUES('{symbol}', '{company_names[symbol]}')")
+        insert_query(f"INSERT INTO Companies(symbol, company_name) VALUES('{str.upper(symbol)}', '{company_names[symbol]}')")
     x = f"SELECT id FROM Companies WHERE symbol='{symbol}';"
     logging.debug(f'submitting following query to find company_id from symbol: {x}')
     sql_query = select_query(x)
@@ -185,9 +186,12 @@ def check_data_point_exists(cursor, table_name, column_name, value):
     return cursor.fetchone()[0] > 0  # Get the first element from the fetchone tuple
 
 def get_company_id(company_name):
+    print(f"TEST LOG get_company_id(): company_name={company_name}")
     query = "SELECT id FROM Companies WHERE company_name=?"
     answer = select_query(query, (company_name,))
-    print(answer)
+    print(f'TEST LOG get_company_id(), answer = {answer}')
+    if not answer:
+        raise ValueError(f'Database yielded no data for query "{query}" ?="{company_name}"')
     return answer[0][0]
 
 def get_high_with_company_id(company_id, date_id=None):
@@ -213,7 +217,7 @@ def get_high_with_company_id(company_id, date_id=None):
             if answer:
                 return answer[0][0]
     else:
-        raise TypeError("date_id must be int, list, or None")
+        raise TypeError("date_id must be int, iterable of dates, or None")
 
 def get_latest_dates_by_id():
     dates_descending_order = []
@@ -228,10 +232,13 @@ def data_wrangling_for_main():
     """Prepares a nested set of dictionary objects for use with the stock_analyst.views.main function.
     Schema : {company_name: {most_recent_high[float]}"""
     # TODO Add character limit so that company_name does not exceed space limit (or switch between abbreviation and
-    #  full name where appropriate.
+    #  full name where appropriate). *Might be best handled on front end.*
     json_data_prep = {}
     for company in company_names:
         company_id = get_company_id(company_names[company])
         high_value = get_high_with_company_id(company_id)
-        json_data_prep.setdefault(company_names[company], high_value)
+        json_data_prep.setdefault(company_names[company],
+                                  {company_names[company]: company_names[company], 'high':high_value, 'abbr': company})
     return json_data_prep
+
+#{'IBM': {'IBM': 'IBM', 'high': 171.305, 'abbr': 'IBM'}, 'Apple': {'Apple': 'Apple', 'high': 215.17, 'abbr': 'AAPL'}, 'Google': {'Google': 'Google', 'high': 178.73, 'abbr': 'GOOG'}}

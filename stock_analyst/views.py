@@ -1,11 +1,17 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
-
+from model.DatabaseAdmin import data_wrangling_for_main
 # Create your views here.
 
 
 def index(request):
     return HttpResponse(render(request, 'index.html'))
+
 def main(request):
-    pass
+    return HttpResponse(render(request, "main.html"))
+
+def main_data_stream(request):
+    data = data_wrangling_for_main()
+    print(f"QUICK TEST: main_data_stream = {data}")
+    return JsonResponse(data)

@@ -1,31 +1,71 @@
-fetch('/main/data_stream')
-    .then(response => response.json())
-    .then(data => {
-        const labels = data.map(item => item.date);
-        const prices = data.map(item => item.price);
+(async function() {
+  try {
+    // Fetch data from live API endpoint
+    const response = await fetch('/main/data_stream');
+    const data = await response.json();
 
-        const ctx = document.getElementById('myChart').getContext('2d');
-        const myChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Stock Prices',
-                    data: prices,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
-                }]
-            },
-            options: {
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    }
-                }
+    // Convert the data object to arrays for Chart.js
+    const companies = Object.values(data);
+    const labels = companies.map(company => company.company_name);
+    const highs = companies.map(company => company.high);
+
+    new Chart(
+      document.getElementById('main_highs'),
+      {
+        type: 'bar',
+        data: {
+          labels: labels,
+          datasets: [
+            {
+              label: 'Stock High Prices ($)',
+              data: highs,
+              backgroundColor: [
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(255, 205, 86, 0.8)'
+              ],
+              borderColor: [
+                'rgba(54, 162, 235, 1)',
+                'rgba(255, 99, 132, 1)',
+                'rgba(255, 205, 86, 1)'
+              ],
+              borderWidth: 2
             }
-        });
-    })
-    .catch(error => console.error('Error fetching stock data:', error));
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: 'Stock High Prices by Company'
+            },
+            legend: {
+              display: false
+            }
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Price ($)'
+              }
+            },
+            x: {
+              title: {
+                display: true,
+                text: 'Company'
+              }
+            }
+          }
+        }
+      }
+    );
+  } catch (error) {
+    console.error('Error loading stock data:', error);
+  }
+})();
 
 
 

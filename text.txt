@@ -1,14 +1,50 @@
-I did some logging and I've found a weird and unexplainable problem. When I run the data_wrangling_for_main() function (and it's helpers) in a Python instance in Powershell, they work correctly, gather the desired data and everything is fine. When I run the Django server and make the URL call to that activates the function, I consistently get an error.
+I am truly at a loss. At the point of having to give up. I don't understand and I don't know what else I can do.
+Following your suggestion, I've replaced the sqlite3 call with the django.db.connections call (which, functionality, should work the same way as I understand it.
 
-This is a helper function to data_wrangling_for_main():
-def get_company_id(company_name):
-    print(f"TEST LOG get_company_id(): company_name={company_name}")
-    query = "SELECT id FROM Companies WHERE company_name=?"
-    answer = select_query(query, (company_name,))
-    print(f'TEST LOG get_company_id(), answer = {answer}')
-    if not answer:
-        raise ValueError(f'Database yielded not data for query "{query}" ?="{company_name}"')
-    return answer[0][0]
+The database related helper functions:
 
+def get_conn(db_url=db_name):
+    if not os.path.exists(db_url):
+        create_db()
+    conn = connection.connect(db_url) # was formerly conn = sqlite3.connect(db_url)
+    return conn
 
-when data_wrangling_for_main() or this function are run independently, it works just fine. When the server is running, the custom ValueError is consistently triggered. What are your thoughts? I have an idea but don't want to taint your initial speculation.
+def get_cursor(conn=None):
+    if conn is None:
+        conn = get_conn()
+    cur = conn.cursor()
+    return cur
+
+def select_query(query, parameterized_data=None):
+    db_conn = get_conn()
+    db_cursor = get_cursor(db_conn)
+    if parameterized_data is None:
+        results = db_cursor.execute(query)
+    else:
+        results = db_cursor.execute(query, parameterized_data)
+    output = results.fetchall()
+    db_conn.close()
+    return output
+
+def insert_query(query, check_up_query=None, parameterized_data=None):
+    db_conn = get_conn()
+    db_cursor = get_cursor(db_conn)
+    logging.info(f'executing query: {query}')
+    if parameterized_data is None:
+        db_cursor.execute(query)
+    else:
+        logging.debug(f'insert_query(), parameterized_data found, query={query}, '
+                      f'parameterized_data={parameterized_data, type(parameterized_data)}')
+        db_cursor.execute(query, parameterized_data)
+    db_conn.commit()
+    db_conn.close()
+    if check_up_query is None:
+        return None
+    else:
+        return select_query(check_up_query)
+
+Now, when I attempt any query in a Python instance, it complains about the "DJANGO_SETTINGS_MODULE" not being defined, even though the "DATABASES" option in the settings.py file have been configured to point to the appropriate database. When the URL is called with the server on, it raises a different error:
+
+"BaseDatabaseWrapper.connect() takes 1 positional argument but 2 were given"
+
+Despite the fact that the documentation, as best as I can find, says it works exactly the same (connection.connect

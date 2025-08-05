@@ -1,7 +1,7 @@
 import logging
 
-import Api
-import DatabaseAdmin
+from . import Api
+from . import DatabaseAdmin
 
 in_production = False
 test_json_write_data = False

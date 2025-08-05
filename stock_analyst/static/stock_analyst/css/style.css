@@ -65,6 +65,9 @@ section p {
     box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
     margin-bottom: 2rem;
     padding: 1rem;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
 }
 
 /* Footer styles */

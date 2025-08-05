@@ -1,10 +1,12 @@
 import logging
+import os
+from pathlib import Path
 
 import requests
-from FetchApiKey import get_api_key
+from .FetchApiKey import get_api_key
 import sqlite3
 import json
-from jsonHandling import save_to_file
+from .jsonHandling import save_to_file
 
 api_key = get_api_key()
 site = f'https://www.alphavantage.co/query'
@@ -38,7 +40,11 @@ def get_all_company_tsd_data(complete=False):
 
 def get_practice_data():
     output = []
-    for f in ['query.json', 'query1.json', 'query2.json']:
+    for f in [
+            os.path.join(Path(__file__).resolve().parent.parent, 'model/query.json'),
+            os.path.join(Path(__file__).resolve().parent.parent, 'model/query1.json'),
+            os.path.join(Path(__file__).resolve().parent.parent, 'model/query2.json'),
+            ]:
         with open(f, 'r') as data:
             output.append(json.load(data))
     return output

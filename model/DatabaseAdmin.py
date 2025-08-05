@@ -1,10 +1,14 @@
 import logging
-import sqlite3
+# import sqlite3
 import os
+import sqlite3
+from pathlib import Path
+
+from django.db import connection
 
 from django.db.models.functions import JSONObject
 
-db_name = 'stock_data_db.db'
+db_name = os.path.join(Path(__file__).resolve().parent.parent, "model/stock_data_db.db")
 
 company_names = {
     'IBM': "IBM",
@@ -53,6 +57,7 @@ create_table_query5 = 'ALTER TABLE DataPoints ADD CONSTRAINT fk_date_to_dates FO
 
 
 def create_db(db_url=db_name):
+    print(f'TEST: create_db to:{db_url}')
     logging.info('database does not exist, creating')
     conn = sqlite3.connect(db_url)
     cur = get_cursor(conn)
@@ -188,7 +193,8 @@ def check_data_point_exists(cursor, table_name, column_name, value):
 def get_company_id(company_name):
     print(f"TEST LOG get_company_id(): company_name={company_name}")
     query = "SELECT id FROM Companies WHERE company_name=?"
-    answer = select_query(query, (company_name,))
+    # answer = select_query(query, [company_name,])
+    answer = select_query("SELECT id FROM Companies WHERE company_name=?", [company_name])
     print(f'TEST LOG get_company_id(), answer = {answer}')
     if not answer:
         raise ValueError(f'Database yielded no data for query "{query}" ?="{company_name}"')
@@ -200,20 +206,20 @@ def get_high_with_company_id(company_id, date_id=None):
         for date in date_id:
             data = select_query("SELECT high "
                                 "FROM Datapoints "
-                                "WHERE company_id=? AND date=?", (company_id, date))
+                                "WHERE company_id=? AND date=?", [company_id, date])
             answer.append(data[0][0])
         return answer
     elif isinstance(date_id, int):
         data = select_query("SELECT high "
                             "FROM Datapoints "
-                            "WHERE company_id=? AND date=?", (company_id, date_id))
+                            "WHERE company_id=? AND date=?", [company_id, date_id])
         return data[0][0]
     elif date_id is None:
         latest_dates = get_latest_dates_by_id()
         for date in latest_dates:
             answer = select_query("SELECT high "
                                   "FROM Datapoints "
-                                  "WHERE company_id=? AND date=?", (company_id, date))
+                                  "WHERE company_id=? AND date=?", [company_id, date])
             if answer:
                 return answer[0][0]
     else:
@@ -238,7 +244,5 @@ def data_wrangling_for_main():
         company_id = get_company_id(company_names[company])
         high_value = get_high_with_company_id(company_id)
         json_data_prep.setdefault(company_names[company],
-                                  {company_names[company]: company_names[company], 'high':high_value, 'abbr': company})
+                                  {'company_name': company_names[company], 'high':high_value, 'abbr': company})
     return json_data_prep
-
-#{'IBM': {'IBM': 'IBM', 'high': 171.305, 'abbr': 'IBM'}, 'Apple': {'Apple': 'Apple', 'high': 215.17, 'abbr': 'AAPL'}, 'Google': {'Google': 'Google', 'high': 178.73, 'abbr': 'GOOG'}}

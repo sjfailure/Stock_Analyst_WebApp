@@ -1,7 +1,9 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
+
 from model.DatabaseAdmin import data_wrangling_for_main
+import model.model_main
 # Create your views here.
 
 
@@ -13,5 +15,4 @@ def main(request):
 
 def main_data_stream(request):
     data = data_wrangling_for_main()
-    print(f"QUICK TEST: main_data_stream = {data}")
     return JsonResponse(data)

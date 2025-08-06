@@ -3,10 +3,10 @@ import os
 from pathlib import Path
 
 import requests
-from .FetchApiKey import get_api_key
+from FetchApiKey import get_api_key
 import sqlite3
 import json
-from .jsonHandling import save_to_file
+from jsonHandling import save_to_file
 
 api_key = get_api_key()
 site = f'https://www.alphavantage.co/query'
@@ -61,7 +61,7 @@ def get_practice_data():
 
 """
 API response structure (Time Series Daily):
-    {"Meta Data:
+    {"Meta Data":
         {"1. Information", 
          "2. Symbol",
          "3. Last Refreshed",

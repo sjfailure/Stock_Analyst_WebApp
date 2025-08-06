@@ -1,7 +1,9 @@
 import logging
 # import sqlite3
 import os
+import pprint
 import sqlite3
+from http.client import responses
 from pathlib import Path
 
 from django.db import connection
@@ -95,6 +97,8 @@ def select_query(query, parameterized_data=None):
     if parameterized_data is None:
         results = db_cursor.execute(query)
     else:
+        logging.debug(f'DatabaseAdmin.select_query() query={query}, '
+                      f'parameterized_data={parameterized_data}')
         results = db_cursor.execute(query, parameterized_data)
     output = results.fetchall()
     db_conn.close()
@@ -117,60 +121,82 @@ def insert_query(query, check_up_query=None, parameterized_data=None):
     else:
         return select_query(check_up_query)
 
-def add_time_series_daily_entry(db_cursor, json_obj):
-    """
-    Adds all times series daily data from a JSON object into database.
-    db_cursor: specify db to target (for default, use get_cursor() function).
-    json_obj: built specifically for API response from Alphavantage.co time series
-        daily calls.
-    output: None
-    """
-    # collect/generate symbol id
-    symbol = json_obj['Meta Data']['2. Symbol'].upper()
-    # company_name = json_obj['']
-    if not check_data_point_exists(get_cursor(get_conn()), "Companies", "symbol", symbol):
-        insert_query(f"INSERT INTO Companies(symbol, company_name) VALUES('{str.upper(symbol)}', '{company_names[symbol]}')")
-    x = f"SELECT id FROM Companies WHERE symbol='{symbol}';"
-    logging.debug(f'submitting following query to find company_id from symbol: {x}')
-    sql_query = select_query(x)
-    if not sql_query:
-        raise ValueError(f"Company symbol({symbol}) is not in database or was not found.")
-    symbol_id = sql_query[0][0]
+def add_time_series_daily_entry(json_obj):
+    # Get the company symbol
+    symbol = get_symbol_from_raw_json(json_obj)
+    # Find or Assign an company_id
+    company_id = get_company_id_by_symbol(symbol)
+    # for each day's worth of data:
+    for date in json_obj["Time Series (Daily)"]:
+        # Find or Assign a date_id
+        date_id = get_date_id(date)
+        # Check that record does not already exist, if not:
+        logging.debug(f'DatabaseAdmin.add_time_series_daily_entry(), json_obj (before parsing)={json_obj}')
+        if not does_record_exist(company_id, date_id):
+            insert_Datapoints_record(company_id,
+                                     date_id,
+                                     open=json_obj["Time Series (Daily)"][date]['1. open'],
+                                     close=json_obj["Time Series (Daily)"][date]["4. close"],
+                                     high=json_obj["Time Series (Daily)"][date]["2. high"],
+                                     low=json_obj["Time Series (Daily)"][date]["3. low"],
+                                     volume=json_obj["Time Series (Daily)"][date]["5. volume"],
+                                     )
+            logging.debug(f'DatabaseAdmin.add_time_series_daily_entry() - added date for '
+                          f'{(symbol, company_id)} for {(date, date_id)}')
+            # Perform Insert Query (INSERT INTO Datapoints (company_id, date, open, close, high, low, volume)
+            #                       VALUES (?, ?, ?, ?, ?, ?, ?)
+        # else: Continue, maybe Break even (no need to rehash old data)?????
 
-    for date in json_obj['Time Series (Daily)'].keys():
-        # find/generate date id
-        logging.debug(msg=f'add_time_series_daily_entry, start of each-date for loop, current date={date}')
-        date_id = select_query(f'SELECT id FROM Dates WHERE date="{date}"')
-        logging.debug(f'add_time_series_daily_entry(): attempting to get date_id for {date}: resutls: {date_id}')
-        if not date_id: # Date not found in Dates table, must add and collect id#.
-            logging.debug(f'date ({date}) not found, adding new id')
-            insert_this = 'INSERT INTO Dates(date) VALUES (?);'
-            insert_query(query=insert_this, parameterized_data=(f'{date}',))
-            date_id = select_query(f'SELECT id FROM Dates WHERE date="{date}"')[0][0]
+    return
+
+def get_symbol_from_raw_json(json_obj):
+    logging.debug(f'DatabaseAdmin.get_symbol_from_raw_json(), json_obj={json_obj}')
+    return str.upper(json_obj["Meta Data"]["2. Symbol"])
+
+def get_company_id_by_symbol(symbol):
+    company_id = is_company_in_Companies(symbol)
+    logging.debug(f'DatabaseAdmin.get_company_id_by_symbol(), company_id={company_id}')
+    if company_id:
+        return company_id
+    else:
+        insert = "INSERT INTO Companies (symbol, company_name) VALUES (?,?)"
+        company_name = None
+        if not symbol in company_names:
+            logging.warning(f"DatabaseAdmin: get_company_id_by_symbol; company '{symbol}' "
+                            f"not included in company_names dictionary.")
         else:
-            date_id=date_id[0][0]
-            logging.debug(f'date found, id={date_id}')
-        # check if data for date for company is already recorded, add to DB if not
-        if not check_data_point_exists(get_cursor(), 'DataPoints',
-                                       f'company_id={symbol_id} and date', value=date_id):
-            logging.info(f'inserting time series daily data for {symbol}, '
-                         f'id:{symbol_id} into DataPoints table for date: {date}, date_id{date_id}')
-            tsd_query = ('INSERT INTO DataPoints (company_id, date, open, close, high, low, volume) '
-                         'Values (?, ?, ?, ?, ?, ?, ?);')
-            prepared_data = (symbol_id,
-                             date_id,
-                             float(json_obj['Time Series (Daily)'][date]['1. open']),
-                             float(json_obj['Time Series (Daily)'][date]['4. close']),
-                             float(json_obj['Time Series (Daily)'][date]['2. high']),
-                             float(json_obj['Time Series (Daily)'][date]['3. low']),
-                             float(json_obj['Time Series (Daily)'][date]['5. volume']),
-                             )
-            logging.debug(f'add_time_series_daily_entry(), inserting prepared data into DB, '
-                          f'parameterized. query={tsd_query}, data={prepared_data}')
-            insert_query(query=tsd_query, parameterized_data=prepared_data)
-            logging.info('data successfully added')
-        else:
-            logging.debug(f'date {date} data already logged for {symbol}')
+            company_name = company_names[symbol]
+        insert_query(insert, parameterized_data=[symbol, company_name])
+        response = is_company_in_Companies(symbol)
+        return response
+
+def is_company_in_Companies(symbol):
+    response = select_query("SELECT id FROM Companies WHERE symbol=?", [symbol,])
+    if response:
+        return response[0][0]
+    else:
+        return False
+
+def get_date_id(date):
+    response = select_query("SELECT id FROM Dates WHERE Date=?", [date,])
+    if response:
+        return response[0][0]
+    else:
+        insert = "INSERT INTO Dates (date) VALUES (?)"
+        insert_query(insert, parameterized_data=[date,])
+        response = select_query("SELECT id FROM Dates WHERE Date=?", [date, ])
+        return response[0][0]
+
+def does_record_exist(company_id, date_id):
+    response = select_query("SELECT * from Datapoints "
+                                  "WHERE company_id=? AND date=?", [company_id, date_id,])
+    return response
+
+def insert_Datapoints_record(company_id, date_id, open=None, close=None, high=None, low=None, volume=None):
+     insert_query("INSERT INTO Datapoints (company_id, date, open, close, high, low, volume)"
+                  "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                  parameterized_data=[company_id, date_id, open, close, high, low, volume,])
+     return
 
 def check_data_point_exists(cursor, table_name, column_name, value):
     """
@@ -190,7 +216,7 @@ def check_data_point_exists(cursor, table_name, column_name, value):
     cursor.execute(query, (value,))
     return cursor.fetchone()[0] > 0  # Get the first element from the fetchone tuple
 
-def get_company_id(company_name):
+def get_company_id_by_name(company_name):
     print(f"TEST LOG get_company_id(): company_name={company_name}")
     query = "SELECT id FROM Companies WHERE company_name=?"
     # answer = select_query(query, [company_name,])
@@ -241,7 +267,7 @@ def data_wrangling_for_main():
     #  full name where appropriate). *Might be best handled on front end.*
     json_data_prep = {}
     for company in company_names:
-        company_id = get_company_id(company_names[company])
+        company_id = get_company_id_by_name(company_names[company])
         high_value = get_high_with_company_id(company_id)
         json_data_prep.setdefault(company_names[company],
                                   {'company_name': company_names[company], 'high':high_value, 'abbr': company})

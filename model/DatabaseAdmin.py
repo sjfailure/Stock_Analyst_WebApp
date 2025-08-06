@@ -12,14 +12,14 @@ db_name = os.path.join(Path(__file__).resolve().parent.parent, "model/stock_data
 
 company_names = {
     'IBM': "IBM",
-    # 'AAP': "Advanced Auto Parts",
+    'AAP': "Advanced Auto Parts",
     'AAPL': "Apple",
-    # 'AMD': "AMD",
-    # 'AMZN': "Amazon",
-    # 'INTC': "Intel Corp.",
-    # 'MSFT': "Microsoft",
+    'AMD': "AMD",
+    'AMZN': "Amazon",
+    'INTC': "Intel Corp.",
+    'MSFT': "Microsoft",
     'GOOG': "Google",
-    # 'NVDA': "Nvidia",
+    'NVDA': "Nvidia",
 }
 
 create_table_query = 'CREATE TABLE DataPoints (' + \

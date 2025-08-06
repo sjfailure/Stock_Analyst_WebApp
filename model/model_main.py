@@ -1,9 +1,12 @@
 import logging
+import os
+from pathlib import Path
 
 from . import Api
 from . import DatabaseAdmin
+import datetime
 
-in_production = False
+in_production = True
 test_json_write_data = False
 complete_data_acquired = False
 
@@ -15,9 +18,19 @@ x.close()
 
 if in_production:
     logging.info('gather json from api')
-    for data_point in Api.get_all_company_tsd_data(complete=complete_data_acquired):
-        logging.debug(msg=f'main.py, data_point={data_point, type(data_point)}, to pass on as json_object')
-        DatabaseAdmin.add_time_series_daily_entry(DatabaseAdmin.get_conn(), data_point)
+    last_update = None
+    with open(os.path.join(Path(__file__).resolve().parent.parent, "model/last_update"), 'r') as file:
+        last_update = file.read()
+    if not last_update:
+        last_update = datetime.date(1900, 1, 1)
+    else:
+        last_update = datetime.date.fromisoformat(last_update)
+    if datetime.date.today() - last_update > datetime.timedelta(days=1):
+        with open(os.path.join(Path(__file__).resolve().parent.parent, "model/last_update"), 'w') as file:
+            file.write(str(datetime.date.today()))
+        for data_point in Api.get_all_company_tsd_data(complete=complete_data_acquired):
+            logging.debug(msg=f'main.py, data_point={data_point, type(data_point)}, to pass on as json_object')
+            DatabaseAdmin.add_time_series_daily_entry(DatabaseAdmin.get_conn(), data_point)
 
 elif test_json_write_data:
     logging.info('testing jsonHandling.py functionality')

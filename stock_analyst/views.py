@@ -1,8 +1,8 @@
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
-
-from model.DatabaseAdmin import data_wrangling_for_main
+from . import models
+from . import helpers
 # Create your views here.
 
 
@@ -13,6 +13,8 @@ def main(request):
     return HttpResponse(render(request, "main.html"))
 
 def main_data_stream(request):
-    import model.model_main
-    data = data_wrangling_for_main()
-    return JsonResponse(data)
+    # helpers.get_practice_data()
+    helpers.get_data_from_api()
+    # data = {}
+
+    return JsonResponse(helpers.main_data_collector())

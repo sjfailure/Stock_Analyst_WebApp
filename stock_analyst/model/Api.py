@@ -3,10 +3,9 @@ import os
 from pathlib import Path
 
 import requests
-from FetchApiKey import get_api_key
-import sqlite3
+from stock_analyst.model.FetchApiKey import get_api_key
 import json
-from jsonHandling import save_to_file
+from stock_analyst.model.jsonHandling import save_to_file
 
 api_key = get_api_key()
 site = f'https://www.alphavantage.co/query'

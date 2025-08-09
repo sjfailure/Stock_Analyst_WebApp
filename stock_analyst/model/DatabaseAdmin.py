@@ -61,8 +61,7 @@ create_table_query5 = 'ALTER TABLE DataPoints ADD CONSTRAINT fk_date_to_dates FO
 def create_db(db_url=db_name):
     print(f'TEST: create_db to:{db_url}')
     logging.info('database does not exist, creating')
-    conn = sqlite3.connect(db_url)
-    cur = get_cursor(conn)
+    cur = connection.cursor()
     logging.debug(msg=f'executing query: {create_table_query}')
     cur.execute(create_table_query)
     logging.debug(msg='create_table_query done')
@@ -76,50 +75,70 @@ def create_db(db_url=db_name):
     cur.execute(create_table_query4)
     logging.debug(msg='create_table_query4 done')
     logging.debug(msg=f'executing query: {create_table_query5}')
-    conn.close()
+    # conn.close()
     return
 
-def get_conn(db_url=db_name):
-    if not os.path.exists(db_url):
-        create_db()
-    conn = sqlite3.connect(db_url)
-    return conn
+# def get_conn(db_url=db_name):
+#     if not os.path.exists(db_url):
+#         create_db()
+#     conn = connection.connect(db_url)
+#     return conn
+#
+# def get_cursor(conn=None):
+#     if conn is None:
+#         conn = get_conn()
+#     cur = conn.cursor()
+#     return cur
 
-def get_cursor(conn=None):
-    if conn is None:
-        conn = get_conn()
-    cur = conn.cursor()
-    return cur
+def check_db(query, db=db_name):
+    def check_table_exists(table_name):
+        with connection.cursor() as cursor:
+            cursor.execute("SELECT name FROM sqlite_master WHERE type='table' AND name=%s", [table_name])
+            output = cursor.fetchone()
+            logging.debug(f'DatabaseAdmin.check_db.check_table_exists(), output={output}')
+            return output[0] > 0
+
+    if not os.path.isfile(db):
+        create_db()
+        return
+    query_table = None
+    next_token = False
+    for token in query.split():
+        if next_token:
+            query_table = token
+            break
+        elif token.upper() is "FROM" or token.upper() is "INTO":
+            next_token = True
+    if not check_table_exists(query_table):
+        create_db()
+    return
+
 
 def select_query(query, parameterized_data=None):
-    db_conn = get_conn()
-    db_cursor = get_cursor(db_conn)
+    check_db(query)
+    db_cursor = connection.cursor()
     if parameterized_data is None:
         results = db_cursor.execute(query)
     else:
+        # parameterized_data = [str(i) for i in parameterized_data]
         logging.debug(f'DatabaseAdmin.select_query() query={query}, '
                       f'parameterized_data={parameterized_data}')
         results = db_cursor.execute(query, parameterized_data)
     output = results.fetchall()
-    db_conn.close()
     return output
 
-def insert_query(query, check_up_query=None, parameterized_data=None):
-    db_conn = get_conn()
-    db_cursor = get_cursor(db_conn)
+def insert_query(query, parameterized_data=None):
+    check_db(query)
+    cursor = connection.cursor()
     logging.info(f'executing query: {query}')
     if parameterized_data is None:
-        db_cursor.execute(query)
+        cursor.execute(query)
     else:
+        # parameterized_data = [str(i) for i in parameterized_data]
         logging.debug(f'insert_query(), parameterized_data found, query={query}, '
                       f'parameterized_data={parameterized_data, type(parameterized_data)}')
-        db_cursor.execute(query, parameterized_data)
-    db_conn.commit()
-    db_conn.close()
-    if check_up_query is None:
-        return None
-    else:
-        return select_query(check_up_query)
+        cursor.execute(query, parameterized_data)
+    return
 
 def add_time_series_daily_entry(json_obj):
     # Get the company symbol
@@ -159,7 +178,7 @@ def get_company_id_by_symbol(symbol):
     if company_id:
         return company_id
     else:
-        insert = "INSERT INTO Companies (symbol, company_name) VALUES (?,?)"
+        insert = "INSERT INTO Companies (symbol, company_name) VALUES (%s, %s)"
         company_name = None
         if not symbol in company_names:
             logging.warning(f"DatabaseAdmin: get_company_id_by_symbol; company '{symbol}' "
@@ -171,30 +190,30 @@ def get_company_id_by_symbol(symbol):
         return response
 
 def is_company_in_Companies(symbol):
-    response = select_query("SELECT id FROM Companies WHERE symbol=?", [symbol,])
+    response = select_query("SELECT id FROM Companies WHERE symbol=%s", [symbol,])
     if response:
         return response[0][0]
     else:
         return False
 
 def get_date_id(date):
-    response = select_query("SELECT id FROM Dates WHERE Date=?", [date,])
+    response = select_query("SELECT id FROM Dates WHERE Date=%s", [date,])
     if response:
         return response[0][0]
     else:
-        insert = "INSERT INTO Dates (date) VALUES (?)"
+        insert = "INSERT INTO Dates (date) VALUES (%s)"
         insert_query(insert, parameterized_data=[date,])
-        response = select_query("SELECT id FROM Dates WHERE Date=?", [date, ])
+        response = select_query("SELECT id FROM Dates WHERE Date=%s", [date, ])
         return response[0][0]
 
 def does_record_exist(company_id, date_id):
     response = select_query("SELECT * from Datapoints "
-                                  "WHERE company_id=? AND date=?", [company_id, date_id,])
+                                  "WHERE company_id=%s AND date=%s", [company_id, date_id,])
     return response
 
 def insert_Datapoints_record(company_id, date_id, open=None, close=None, high=None, low=None, volume=None):
      insert_query("INSERT INTO Datapoints (company_id, date, open, close, high, low, volume)"
-                  "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                  "VALUES (%s, %s, %s, %s, %s, %s, %s)",
                   parameterized_data=[company_id, date_id, open, close, high, low, volume,])
      return
 
@@ -211,19 +230,19 @@ def check_data_point_exists(cursor, table_name, column_name, value):
     Returns:
         True if the data point exists, False otherwise.
     """
-    query = f"SELECT EXISTS (SELECT 1 FROM {table_name} WHERE {column_name} = ?)"
+    query = f"SELECT EXISTS (SELECT 1 FROM {table_name} WHERE {column_name} = %s)"
     logging.debug(f'performing following query: {query} --- parameterized variable={value}')
     cursor.execute(query, (value,))
     return cursor.fetchone()[0] > 0  # Get the first element from the fetchone tuple
 
 def get_company_id_by_name(company_name):
     print(f"TEST LOG get_company_id(): company_name={company_name}")
-    query = "SELECT id FROM Companies WHERE company_name=?"
+    query = "SELECT id FROM Companies WHERE company_name=%s"
     # answer = select_query(query, [company_name,])
-    answer = select_query("SELECT id FROM Companies WHERE company_name=?", [company_name])
+    answer = select_query("SELECT id FROM Companies WHERE company_name=%s", [company_name])
     print(f'TEST LOG get_company_id(), answer = {answer}')
     if not answer:
-        raise ValueError(f'Database yielded no data for query "{query}" ?="{company_name}"')
+        raise ValueError(f'Database yielded no data for query "{query}" %s="{company_name}"')
     return answer[0][0]
 
 def get_high_with_company_id(company_id, date_id=None):
@@ -232,20 +251,20 @@ def get_high_with_company_id(company_id, date_id=None):
         for date in date_id:
             data = select_query("SELECT high "
                                 "FROM Datapoints "
-                                "WHERE company_id=? AND date=?", [company_id, date])
+                                "WHERE company_id=%s AND date=%s", [company_id, date])
             answer.append(data[0][0])
         return answer
     elif isinstance(date_id, int):
         data = select_query("SELECT high "
                             "FROM Datapoints "
-                            "WHERE company_id=? AND date=?", [company_id, date_id])
+                            "WHERE company_id=%s AND date=%s", [company_id, date_id])
         return data[0][0]
     elif date_id is None:
         latest_dates = get_latest_dates_by_id()
         for date in latest_dates:
             answer = select_query("SELECT high "
                                   "FROM Datapoints "
-                                  "WHERE company_id=? AND date=?", [company_id, date])
+                                  "WHERE company_id=%s AND date=%s", [company_id, date])
             if answer:
                 return answer[0][0]
     else:

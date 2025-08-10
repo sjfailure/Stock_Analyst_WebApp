@@ -46,7 +46,7 @@ def get_data_from_api(complete=False):
         with open("stock_analyst/model/last_update", 'w') as file:
             file.write(str(datetime.date.today()))
         for data_point in get_all_company_tsd_data(complete=complete):
-            logging.debug(msg=f'main.py, data_point={data_point, type(data_point)}, to pass on as json_object')
+            logging.warning(msg=f'helpers.py.get_data_from_api() data_point={data_point, type(data_point)}, to pass on as json_object')
             add_times_series_daily_datapoint(data_point)
 
 def get_date_id_instance(target_date):

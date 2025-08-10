@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import os
+import pprint
 
 import requests
 
@@ -58,6 +59,7 @@ def get_company_id_instance_by_symbol(symbol):
     return x
 
 def add_times_series_daily_datapoint(json_data):
+    logging.warning(f'add_times_series_daily_datapoint(): incoming json_data \n{pprint.pprint(json_data)}')
     company_symbol = json_data["Meta Data"]["2. Symbol"]
     if not company_symbol in companies:
         logging.warning(f'get_practice_data(): symbol {company_symbol} not in companies dict.')

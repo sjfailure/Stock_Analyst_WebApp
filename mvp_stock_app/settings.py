@@ -85,6 +85,16 @@ if DEBUG:
             'NAME': BASE_DIR / 'stock_analyst/model/stock_data_db.db',
         }
     }
+    # DATABASES = {
+    #     'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     'NAME': "stock_data_db",
+    #     'USER': "sjmadmin",
+    #     'PASSWORD': "sjmadmin1#",
+    #     'HOST': "localhost",
+    #     'PORT': 5432,  # 5432 by default
+    #     }
+    # }
 else:
     DATABASES = {
         'default': dj_database_url.config(

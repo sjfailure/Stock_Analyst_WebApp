@@ -25,13 +25,12 @@ api_key = os.environ.get('alpha_vantage_api_key')
 # with open('stock_analyst/model/apikey', 'r') as file:
 #     api_key = file.read()
 last_update = datetime.date(year=1900, day=1, month=1)
-with open('stock_analyst/model/last_update', 'r') as file:
+with open('stock_analyst/model/last_update', 'w+') as file:
     date_info = file.read()
-    last_update = datetime.date.fromisoformat(date_info)
-if not last_update:
+if not date_info:
     last_update = datetime.date(1900, 1, 1)
 else:
-    last_update = datetime.date.fromisoformat('1900-01-01')
+    last_update = datetime.date.fromisoformat(date_info)
 
 def get_practice_data():
     mock_api_data = []

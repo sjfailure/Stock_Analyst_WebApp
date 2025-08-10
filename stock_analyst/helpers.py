@@ -25,13 +25,7 @@ companies = {
 api_key = os.environ.get('alpha_vantage_api_key')
 # with open('stock_analyst/model/apikey', 'r') as file:
 #     api_key = file.read()
-last_update = datetime.date(year=1900, day=1, month=1)
-with open('stock_analyst/model/last_update', 'w+') as file:
-    date_info = file.read()
-if not date_info:
-    last_update = datetime.date(1900, 1, 1)
-else:
-    last_update = datetime.date.fromisoformat(date_info)
+
 
 def get_practice_data():
     mock_api_data = []
@@ -42,7 +36,9 @@ def get_practice_data():
         add_times_series_daily_datapoint((data_cache))
 
 def get_data_from_api(complete=False):
-    if datetime.date.today() - last_update > datetime.timedelta(days=1):
+    now = datetime.date.today()
+    latest_update =datetime.date.fromisoformat(get_latest_update())
+    if now - latest_update > datetime.timedelta(days=1):
         with open("stock_analyst/model/last_update", 'w') as file:
             file.write(str(datetime.date.today()))
         for data_point in get_all_company_tsd_data(complete=complete):
@@ -124,3 +120,10 @@ def get_all_company_tsd_data(complete=False):
             yield data.json()
         else:
             raise ValueError(f'API data requisition failed, symbol({company}), status code and response: {data.status_code, data.text}')
+
+def get_latest_update():
+    query = "SELECT * FROM stock_analyst_dates ORDER BY date DESC"
+    latest_update = Dates.objects.raw(query)
+    if not latest_update[0]:
+        return '1900-01-01'
+    return latest_update[0].date

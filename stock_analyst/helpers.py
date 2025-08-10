@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import os
 
 import requests
 
@@ -20,13 +21,12 @@ companies = {
     'GOOG': "Google",
     'NVDA': "Nvidia",
 }
-api_key = ""
-with open('stock_analyst/model/apikey', 'r') as file:
-    api_key = file.read()
+api_key = os.environ.get('alpha_vantage_api_key')
+# with open('stock_analyst/model/apikey', 'r') as file:
+#     api_key = file.read()
 last_update = datetime.date(year=1900, day=1, month=1)
 with open('stock_analyst/model/last_update', 'r') as file:
     date_info = file.read()
-    print("WIEIFIE!!!!!!", repr(date_info), type(date_info))
     last_update = datetime.date.fromisoformat(date_info)
 if not last_update:
     last_update = datetime.date(1900, 1, 1)

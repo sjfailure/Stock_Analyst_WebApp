@@ -112,14 +112,14 @@ def get_latest_datapoint_by_company_id(company_id_instance):
 
 def get_all_company_tsd_data(complete=False):
     for company in companies:
-        logging.info(f'gathering data for {company}')
+        logging.warning(f'gathering data for {company}')
         if complete:
             data = requests.get(url=site, params={'function': function_mode, 'symbol': company, 'outputsize': 'full',
                                                   'apikey': api_key})
         else:
             data = requests.get(url=site, params={'function': function_mode, 'symbol': company, 'apikey': api_key})
         if data.status_code == 200:
-            logging.info(f'successful call for {company} data, {data.url}')
+            logging.warning(f'successful call for {company} data, {data.url}')
             # save_to_file(data.json(), f'{company.lower()}_data.json')
             yield data.json()
         else:

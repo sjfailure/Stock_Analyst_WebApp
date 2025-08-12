@@ -20,3 +20,6 @@ class Datapoints(models.Model):
     high = models.FloatField()
     low = models.FloatField()
     volume = models.FloatField()
+
+class Update(models.Model):
+    last_update = models.DateField()

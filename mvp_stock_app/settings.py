@@ -26,6 +26,7 @@ SECRET_KEY = os.environ.get('mvp_stock_app_security_key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = 'RENDER' not in os.environ
+USE_REAL_DATA = False
 
 ALLOWED_HOSTS = []
 

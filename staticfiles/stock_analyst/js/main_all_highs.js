@@ -66,7 +66,7 @@
     console.error('Error loading stock data:', error);
   }
 })();
-
+// TODO: catch error and display error graphic if there's a data problem
 
 
 //(async function() {

@@ -7,21 +7,35 @@ import pprint
 import requests
 
 from . import models
-from .models import Companies, Dates, Datapoints
+from .models import Companies, Dates, Datapoints, Update
+from mvp_stock_app.settings import USE_REAL_DATA
 
 site = f'https://www.alphavantage.co/query'
 function_mode = 'TIME_SERIES_DAILY'
-companies = {
-    'IBM': "IBM",
-    'AAP': "Advanced Auto Parts",
-    'AAPL': "Apple",
-    'AMD': "AMD",
-    'AMZN': "Amazon",
-    'INTC': "Intel Corp.",
-    'MSFT': "Microsoft",
-    'GOOG': "Google",
-    'NVDA': "Nvidia",
-}
+if USE_REAL_DATA:
+    companies = {
+        'IBM': "IBM",
+        'AAP': "Advanced Auto Parts",
+        'AAPL': "Apple",
+        'AMD': "AMD",
+        'AMZN': "Amazon",
+        'INTC': "Intel Corp.",
+        'MSFT': "Microsoft",
+        'GOOG': "Google",
+        'NVDA': "Nvidia",
+    }
+else:
+    companies = {
+        'IBM': "IBM",
+        # 'AAP': "Advanced Auto Parts",
+        'AAPL': "Apple",
+        # 'AMD': "AMD",
+        # 'AMZN': "Amazon",
+        # 'INTC': "Intel Corp.",
+        # 'MSFT': "Microsoft",
+        'GOOG': "Google",
+        # 'NVDA': "Nvidia",
+    }
 api_key = os.environ.get('alpha_vantage_api_key')
 # with open('stock_analyst/model/apikey', 'r') as file:
 #     api_key = file.read()
@@ -35,12 +49,14 @@ def get_practice_data():
     for data_cache in mock_api_data:
         add_times_series_daily_datapoint((data_cache))
 
+# TODO make get_data_from_api() async
 def get_data_from_api(complete=False):
-    now = datetime.date.today()
-    latest_update =datetime.date.fromisoformat(get_latest_update())
+    now = datetime.datetime.now()
+    set_last_update_default()
+    latest_update = datetime.datetime.fromisoformat(Update.objects.all()[0].last_update)
     if now - latest_update > datetime.timedelta(days=1):
-        with open("stock_analyst/model/last_update", 'w') as file:
-            file.write(str(datetime.date.today()))
+        Update.last_update = now
+        Update.save()
         for data_point in get_all_company_tsd_data(complete=complete):
             logging.warning(msg=f'helpers.py.get_data_from_api() data_point={data_point, type(data_point)}, to pass on as json_object')
             add_times_series_daily_datapoint(data_point)
@@ -88,6 +104,7 @@ def add_times_series_daily_datapoint(json_data):
             new_datapoint.save()
     return
 
+# TODO alter main_data_collector() to include all fields from Datapoints
 def main_data_collector():
     json_data = {}
     for company in companies:
@@ -106,6 +123,8 @@ def get_latest_datapoint_by_company_id(company_id_instance):
     params = [company_id_instance.id,]
     return Datapoints.objects.raw(query, params)[0]
 
+# TODO make get_all_company_tsd_data() async
+# TODO refigure get_all_company_tsd_data() to use httpx instead of requests
 def get_all_company_tsd_data(complete=False):
     for company in companies:
         logging.warning(f'gathering data for {company}')
@@ -127,3 +146,8 @@ def get_latest_update():
     if not latest_update[0]:
         return '1900-01-01'
     return latest_update[0].date
+
+def set_last_update_default():
+    if not Update.last_update:
+        Update.last_update = datetime.datetime(day=1, month=1, year=1990)
+    return

@@ -1,3 +1,4 @@
+from asgiref.sync import sync_to_async
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
@@ -8,14 +9,12 @@ from mvp_stock_app.settings import USE_REAL_DATA
 
 
 def index(request):
-    return HttpResponse(render(request, 'index.html'))
+    return HttpResponse(render(request, 'main.html'))
 
 def main(request):
-    return HttpResponse(render(request, "main.html"))
+    return HttpResponse(render(request, "index.html"))
 
-def main_data_stream(request):
-    if USE_REAL_DATA:
-        helpers.get_data_from_api()
-    else:
-        helpers.get_practice_data()
-    return JsonResponse(helpers.main_data_collector())
+async def main_data_stream(request):
+    await helpers.update_model()
+    data = await sync_to_async(helpers.main_data_collector)()
+    return JsonResponse(data)

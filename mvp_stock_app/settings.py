@@ -26,7 +26,7 @@ SECRET_KEY = os.environ.get('mvp_stock_app_security_key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = 'RENDER' not in os.environ
-USE_REAL_DATA = False
+USE_REAL_DATA = True # Calling from persistent online DB now, no need to rely on practice data.
 
 ALLOWED_HOSTS = []
 
@@ -79,29 +79,11 @@ WSGI_APPLICATION = 'mvp_stock_app.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-if DEBUG:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'stock_analyst/model/stock_data_db.db',
-        }
-    }
-    # DATABASES = {
-    #     'default': {
-    #     'ENGINE': 'django.db.backends.postgresql',
-    #     'NAME': "stock_data_db",
-    #     'USER': "sjmadmin",
-    #     'PASSWORD': "sjmadmin1#",
-    #     'HOST': "localhost",
-    #     'PORT': 5432,  # 5432 by default
-    #     }
-    # }
-else:
-    DATABASES = {
-        'default': dj_database_url.config(
-            default=os.environ.get('DATABASE_URL'),
-            conn_max_age=600
-        )
+DATABASES = {
+    'default': dj_database_url.config(
+        default=os.environ.get('DATABASE_URL'),
+        conn_max_age=600
+    )
 }
 
 
@@ -184,10 +166,10 @@ LOGGING = {
     'loggers': {
         'django': {
             'handlers': ['console', 'file'],
-            'level': 'WARN',  # Set the logging level here
+            'level': 'ERROR',  # Set the logging level here
             'propagate': True,
         },
-        'myapp': {  # Replace 'myapp' with your app name
+        'stock_analyst': {
             'handlers': ['console', 'file'],
             'level': 'WARN',  # Set the logging level for your app
             'propagate': False,

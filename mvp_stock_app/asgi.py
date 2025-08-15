@@ -10,7 +10,8 @@ https://docs.djangoproject.com/en/5.2/howto/deployment/asgi/
 import os
 
 from django.core.asgi import get_asgi_application
+from django.core.management import call_command
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mvp_stock_app.settings')
-
+call_command('run_setup')
 application = get_asgi_application()

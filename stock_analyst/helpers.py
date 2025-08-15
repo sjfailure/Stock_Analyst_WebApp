@@ -137,7 +137,7 @@ def is_data_stale(company_id=None, company_instance=None):
         raise TypeError(f"Type for company_instance must be {type(Companies.objects.get(id=1))}, not {type(company_instance)}")
     latest_datapoint = get_latest_datapoint_by_company_id(company_instance)
     if not latest_datapoint:
-        return False
+        return True
     return datetime.date.today() - latest_datapoint.date_string > datetime.timedelta(days=1)
 #
 #

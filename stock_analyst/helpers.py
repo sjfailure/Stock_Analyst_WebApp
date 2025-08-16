@@ -44,9 +44,16 @@ api_key = os.environ.get('alpha_vantage_api_key')
 
 
 
-async def should_api_call_be_made():
-    latest_entry = await sync_to_async(get_latest_entry_date_in_datapoints)()
-    return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
+async def should_api_call_be_made(company_symbol=None):
+    if company_symbol is None:
+        latest_entry = await sync_to_async(get_latest_entry_date_in_datapoints)()
+        return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
+    else:
+        latest_entry = await sync_to_async(get_latest_entry_date_for_a_company_in_datapoints)(company_symbol)
+        if latest_entry is None:
+            return True
+        else:
+            return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
 #
 async def get_latest_entry_date_in_datapoints():
     query = """SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_joined
@@ -55,28 +62,42 @@ async def get_latest_entry_date_in_datapoints():
                ORDER BY stock_analyst_dates.date DESC"""
     latest_entry = await sync_to_async(Datapoints.objects.raw)(query)
     return latest_entry[0].date_joined
-#
+
+async def get_latest_entry_date_for_a_company_in_datapoints(company_symbol):
+    query = """SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_joined
+               FROM stock_analyst_datapoints
+               JOIN stock_analyst_dates ON stock_analyst_datapoints.date_id = stock_analyst_dates.id
+               WHERE stock_analyst_datapoints.company_id_id = %s
+               ORDER BY stock_analyst_dates.date DESC"""
+    company_id = get_company_id_by_symbol(company_symbol)
+    latest_entry = await sync_to_async(Datapoints.objects.raw)(query, [company_id,])
+    if not latest_entry:
+        return None
+    return latest_entry[0].date_joined
 
 async def update_model():
     if USE_REAL_DATA:
-        if should_api_call_be_made():
-            for company in companies:
-                async for data in make_api_call(company):
-                    try:
-                        company_symbol = data["Meta Data"]["2. Symbol"]
-                    except BaseException as e:
-                        print(e)
-                        return
-                    if not await sync_to_async(is_company_in_db_by_symbol)(company_symbol):
-                        await sync_to_async(add_company_to_table)(companies[company_symbol], company_symbol)
-                    company_instance = await sync_to_async(get_company_instance_by_symbol)(company_symbol)
-                    if await sync_to_async(is_data_stale)(company_instance=company_instance):
-                        for datapoint in data["Time Series (Daily)"]:
-                            if not await sync_to_async(is_date_in_db)(datapoint):
-                                await sync_to_async(add_date_to_table)(datapoint)
-                            date_instance = await sync_to_async(get_date_instance_by_date)(datapoint)
-                            if not await sync_to_async(is_datapoint_in_db)(company_instance, date_instance):
-                                await sync_to_async(add_time_series_daily_datapoint)(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
+        for company in companies:
+            if should_api_call_be_made(company):
+                data = await make_api_call(company)
+                try:
+                    company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
+                except BaseException as e:
+                    print(e)
+                    continue
+                if not await sync_to_async(is_company_in_db_by_symbol)(company):
+                    await sync_to_async(add_company_to_table)(companies[company], company)
+                company_instance = await sync_to_async(get_company_instance_by_symbol)(company)
+                # if await sync_to_async(is_data_stale)(company_instance=company_instance):
+                # latest_datapoint_for_company = await sync_to_async(get_latest_entry_date_for_a_company_in_datapoints)(company)
+                for datapoint in data["Time Series (Daily)"]:
+                    if not await sync_to_async(is_date_in_db)(datapoint):
+                        await sync_to_async(add_date_to_table)(datapoint)
+                    date_instance = await sync_to_async(get_date_instance_by_date)(datapoint)
+                    if not await sync_to_async(is_datapoint_in_db)(company_instance, date_instance):
+                        await sync_to_async(add_time_series_daily_datapoint)(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
+                    else:
+                        continue
     else:
         check_company_symbol = "AAPL"
         check_date = "2024-06-14"
@@ -326,7 +347,7 @@ async def make_api_call(company_symbol:str):
     if data.status_code == 200:
         logging.debug(f'successful call for {company_symbol} data, {data.url}')
         # save_to_file(data.json(), f'{company.lower()}_data.json')
-        yield data.json()
+        return data.json()
     else:
         raise ValueError(
             f'API data requisition failed, symbol({company_symbol}), status code and response: {data.status_code, data.text}')

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart.js Example</title>
+    <link rel="stylesheet" href="styles.css"> <!-- Optional: Link to your CSS file -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Include Chart.js -->
+</head>
+<body>
+    <div id="company_info" class=".container-fluid .col-sm|md|lg|xl|xxl-4 .col-12">"
+    <h1 class="xs">{{ company_name }}</h1>
+    </div>
+
+    <div class="dropdown text-right">
+      <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+        Select Category
+      </button>
+      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+        <a class="dropdown-item" id='high_button' href="javascript:void(0)" onclick="loadCharty('high')">Highs</a>
+        <a class="dropdown-item" id='low_button'href="javascript:void(0)" onclick="loadCharty('low')">Lows</a>
+        <a class="dropdown-item" id='open_button'href="javascript:void(0)" onclick="loadCharty('open')">Open</a>
+        <a class="dropdown-item" id='close_button'href="javascript:void(0)" onclick="loadCharty('close')">Close</a>
+        <a class="dropdown-item" id='volume_button'href="javascript:void(0)" onclick="loadCharty('volume')">Volume</a>
+      </div>
+        <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Select Period
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+            <a class="dropdown-item" id='high_button' href="javascript:void(0)" onclick="loadChartx('7')"')">7-Days </a>
+            <a class="dropdown-item" id='low_button'href="javascript:void(0)" onclick="loadChartx('30')">30-Days</a>
+            <a class="dropdown-item" id='open_button'href="javascript:void(0)" onclick="loadChartx('365')">1-Year</a>
+            <a class="dropdown-item" id='close_button'href="javascript:void(0)" onclick="loadChartx('5')">5-Years</a>
+            <a class="dropdown-item" id='volume_button'href="javascript:void(0)" onclick="loadChartx('10')">10-Years</a>
+          </div>
+    </div>
+    <divstyle="width: 100%; max-width: 800px; margin-top: 2rem;">
+        <canvas id="lineChart" width="400" height="200"></canvas>
+    </div>
+
+    <script src="detail-chart-loader.js"></script> 
+      <!-- <script src="{% static 'stock_analyst/js/detail-chart-loader.js' %}"></script> -->
+    <script src="scripts.js"></script> <!-- Link to your JavaScript file -->
+</body>
+</html>

@@ -11,11 +11,11 @@ from .models import Dates
 # Create your views here.
 
 
-def index(request):
-    return HttpResponse(render(request, 'main.html'))
+# def index(request):
+#     return HttpResponse(render(request, 'main.html'))
 
 def main(request):
-    return HttpResponse(render(request, "index.html"))
+    return HttpResponse(render(request, "main.html"))
 
 async def main_data_stream(request):
     await helpers.update_model()
@@ -35,3 +35,7 @@ def db_health_check(request):
              return JsonResponse({"status": "ok", "database_connection": "alive"})
     except Exception as e:
         return JsonResponse({"status": "error", "database_connection": "dead", "error": str(e)}, status=500)
+
+def detail(request, company_id):
+    helpers.detail_build()
+    return HttpResponse(render(request, template_name="detail.html"))

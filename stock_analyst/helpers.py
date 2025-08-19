@@ -10,7 +10,7 @@ from asgiref.sync import sync_to_async
 
 from . import models
 from .models import Companies, Dates, Datapoints, Update
-from mvp_stock_app.settings import USE_REAL_DATA
+from mvp_stock_app.settings import USE_REAL_DATA, INITIAL_DATACOLLECTION_COMPLETE
 
 site = f'https://www.alphavantage.co/query'
 function_mode = 'TIME_SERIES_DAILY'
@@ -82,8 +82,8 @@ async def update_model():
                 data = await make_api_call(company)
                 try:
                     company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
-                except BaseException as e:
-                    print(e)
+                except AttributeError as e:
+                    logging.error(f'update_model(): API data incorrect: {e}')
                     continue
                 if not await sync_to_async(is_company_in_db_by_symbol)(company):
                     await sync_to_async(add_company_to_table)(companies[company], company)
@@ -343,7 +343,17 @@ def is_datapoint_in_db(company_instance, date_instance):
 
 async def make_api_call(company_symbol:str):
     logging.debug(f'gathering data for {company_symbol}')
-    data = httpx.get(url=site, params={'function': function_mode, 'symbol': company_symbol, 'apikey': api_key})
+    if not INITIAL_DATACOLLECTION_COMPLETE:
+        data = httpx.get(url=site, params={'function': function_mode,
+                                           'symbol': company_symbol,
+                                           'outputsize': 'full',
+                                           'apikey': api_key}
+                         )
+    else:
+        data = httpx.get(url=site, params={'function': function_mode,
+                                           'symbol': company_symbol,
+                                           'apikey': api_key},
+                        )
     if data.status_code == 200:
         logging.debug(f'successful call for {company_symbol} data, {data.url}')
         # save_to_file(data.json(), f'{company.lower()}_data.json')

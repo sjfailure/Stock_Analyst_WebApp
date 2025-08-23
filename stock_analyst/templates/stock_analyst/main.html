@@ -4,11 +4,11 @@
 <head>
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
-     <!-- {% load static %} -->
+      {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mos' Stock Analysis</title>
-     <link rel="stylesheet" href="{% static 'stock_analyst/css/style.css' %}">
+     <link rel="stylesheet" href="{% static 'stock_analyst/css/style1.css' %}">
 <!--    <link rel="stylesheet" href="style.css">-->
 
 </head>
@@ -33,9 +33,9 @@
 
       <div style="width: 100%; max-width: 800px; margin-top: 2rem;"><canvas id="main_chart"></canvas></div>
 
-<!--      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>-->
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
        <script src="{% static 'stock_analyst/js/chart-loader.js' %}"></script>
-      <script src="chart-loader.js"></script>
+<!--      <script src="chart-loader.js"></script>-->
         <section>
             <h2>About</h2>
             <p>This is a sample project to demonstrate my development capabilities. For further information, please reach out to me by <a href="mailto:sj_martin2023@hotmail.com">email</a>.</p>

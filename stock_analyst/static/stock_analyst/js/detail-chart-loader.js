@@ -1,310 +1,226 @@
-var x = 7;
-var y = 'high';
+var x = "7";
+var y = "high";
 let currentChart = null;
 let stockData = null;
-company_id = null;
-company_name = null;
+const category_name_map = {
+    'high': 'High', 'low': 'Low', 'open': 'Open', 'close': 'Close', 'volume': 'Volume'
+};
+const category_name_suffix = '_button';
+const period_name_map = {
+    '7': '7 Days', '30': '30 Days', '365': '1 Year', '5': '5 Years', '10': '10 Years'
+};
+const period_name_suffix = '';
+const period_button_id = 'dropdownMenuxButton';
+const category_button_id = 'dropdownMenuyButton';
+const category_api_call_map = {
+    'high': 1,
+    'low': 2,
+    'open': 3,
+    'close': 4,
+    'volume': 5,
+}
 
 // Function to fetch and store data
 async function fetchStockData(period, category) {
-  // if (stockData) {
-  //   return stockData; // Return cached data if already fetched
-  // }
+    // for API call
+    try {
+        let request = `data_stream/${company_id}/${x}/${category_api_call_map[y]}`
+        const response = await fetch(request);
+        stockData = await response.json();
+        return stockData;
+    } catch (error) {
+        console.error('Error fetching stock data:', error);
+        throw error;
+    }
 
-  // try {
-  //   const response = await fetch('/main/data_stream');
-  //   stockData = await response.json();
-  //   return stockData;
-  // } catch (error) {
-  //   console.error('Error fetching stock data:', error);
-  //   throw error;
-  // }
-
-  var data_file;
-  switch (period) {
-    case (7):
-      switch (category) {
-        case ('high'):
-          data_file = '/seven_day_high.json';
-          break;
-        case ('low'):
-          data_file = '/seven_day_low.json';
-          break;
-        case ('open'):
-          data_file = '/seven_day_open.json';
-          break;
-        case ('close'):
-          data_file = '/seven_day_close.json';
-        case ('volume'):
-          data_file = '/seven_day_volume.json';
-      }
-      break;
-    case (30):
-      switch (category) {
-        case ('high'):
-          data_file = '/thirty_one_day_high.json';
-          break;
-        case ('low'):
-          data_file = '/thirty_one_day_low.json';
-          break;
-        case ('open'):
-          data_file = '/thirty_one_day_open.json';
-          break;
-        case ('close'):
-          data_file = '/thirty_one_day_close.json';
-        case ('volume'):
-          data_file = '/thirty_one_day_volume.json';
-      }
-      break;
-    case(365):
-      switch (category) {
-        case ('high'):
-          data_file = '/three_six_five_day_high.json';
-          break;
-        case ('low'):
-          data_file = '/three_six_five_day_low.json';
-          break;
-        case ('open'):
-          data_file = '/three_six_five_day_open.json';
-          break;
-        case ('close'):
-          data_file = '/three_six_five_day_close.json';
-        case ('volume'):
-          data_file = '/three_six_five_day_volume.json';
-      }
-      break;
-      case(5):
-        switch (category)  {
-            case ('high'):
-              data_file = '/five_year_high.json';
-              break;
-            case ('low'):
-              data_file = '/five_year_low.json';
-              break;
-            case ('open'):
-              data_file = '/five_year_open.json';
-              break;
-            case ('close'):
-              data_file = '/five_year_close.json';
-            case ('volume'):
-        }
-      }
-  
-  const response = fetch(data_file);
-  stockData = response;
-  return stockData;
+    // for practice data
+//    const periodMap = {
+//        "7": "seven_day",
+//        "30": "thirty_one_day",
+//        "365": "three_six_five_day",
+//        "5": "five_year", // Assuming "5" means 5 years
+//    };
+//    const periodPath = periodMap[period];
+//    if (!periodPath) {
+//        console.error(`Invalid period specified: ${period}`);
+//        return null;
+//    }
+//    const data_file = `/${periodPath}_${category}.json`;
+//    console.log(`Requesting data file: ${data_file}`);
+//    try {
+//        const response = await fetch(data_file);
+//        if (!response.ok) {
+//            throw new Error(`HTTP error! status: ${response.status}`);
+//        }
+//        const jsonData = await response.json();
+//        return jsonData;
+//    }
+//    catch (error) {
+//        console.error(`Could not fetch data from ${data_file}:`, error);
+//        return null; // Return null to prevent crash in calling function
+//    }
 }
 
 function destroyCurrentChart() {
-  if (currentChart) {
-    currentChart.destroy();
-  }
-  currentChart = null;
+    if (currentChart) {
+        currentChart.destroy();
+        currentChart = null;
+    }
 }
-
+// A helper function to create chart text labels dynamically
+function getChartLabels(period, category) {
+    const periodTextMap = {
+        "7": "Last 7 Days",
+        "30": "Last 30 Days",
+        "365": "Last Year",
+        "5": "Last 5 Years",
+        "10": "Last 10 Years"
+    };
+    const categoryTextMap = {
+        high: "High Prices ($)",
+        low: "Low Prices ($)",
+        open: "Opening Prices ($)",
+        close: "Closing Prices ($)",
+        volume: "Volume (ea.)",
+    };
+    const yAxisLabelMap = {
+        high: "Price ($)",
+        low: "Price ($)",
+        open: "Price ($)",
+        close: "Price ($)",
+        volume: "Units (ea.)",
+    };
+    const title = `${company_name} Stock ${categoryTextMap[category]} for the ${periodTextMap[period]}`;
+    const yAxisLabel = yAxisLabelMap[category];
+    const xAxisLabel = "Date";
+    return { title, yAxisLabel, xAxisLabel };
+}
 function loadChartx(period) {
-  x = period;
-  loadChart()
+    x = period;
+    updateActiveButton(period_button_id, x, period_name_map, period_name_suffix);
+    loadChart();
 }
-
 function loadCharty(category) {
-  y = category;
-  loadChart()
+    y = category;
+    updateActiveButton(category_button_id, y, category_name_map, category_name_suffix);
+    loadChart();
 }
 
+// TODO Reverse dataset so dates ascend from left to right
+// TODO Fix major performance issues with large datasets
+async function loadChart() {
+  const current_labels = getChartLabels(x, y);
+  console.log(`Loading chart for ${y} data for the last ${x} days`);
 
-function loadChart() {
-  const chart_texts = [
-    [company_name + ' Stock High Prices ($) for the Last 7 Days', 'Price ($)', 'Date', 'high_button'],
-      [company_name + ' Stock Low Prices ($) for the Last 7 Days', 'Price ($)', 'Date', 'low_button'],
-      [company_name + ' Stock Opening Prices ($) for the Last 7 Days', 'Price ($)', 'Date', 'open_button'],
-      [company_name + ' Stock Closing Prices ($) for the Last 7 Days', 'Price ($)', 'Date', 'close_button'],
-      [company_name + ' Stock Volume (ea.) for the Last 7 Days', 'Units (ea.)', 'Date', 'volume_button']
-      [company_name + ' Stock High Prices ($) for the Last 30 Days', 'Price ($)', 'Date', 'high_button'],
-      [company_name + ' Stock Low Prices ($) for the Last 30 Days', 'Price ($)', 'Date', 'low_button'],
-      [company_name + ' Stock Opening Prices ($) for the Last 30 Days', 'Price ($)', 'Date', 'open_button'],
-      [company_name + ' Stock Closing Prices ($) for the Last 30 Days', 'Price ($)', 'Date', 'close_button'],
-      [company_name + ' Stock Volume (ea.) for the Last 30 Days', 'Units (ea.)', 'Date', 'volume_button']
-      [company_name + ' Stock High Prices ($) for the Last Year', 'Price ($)', 'Date', 'high_button'],
-      [company_name + ' Stock Low Prices ($) for the Last Year', 'Price ($)', 'Date', 'low_button'],
-      [company_name + ' Stock Opening Prices ($) for the Last Year', 'Price ($)', 'Date', 'open_button'],
-      [company_name + ' Stock Closing Prices ($) for the Last Year', 'Price ($)', 'Date', 'close_button'],
-      [company_name + ' Stock Volume (ea.) for the Last Year', 'Units (ea.)', 'Date', 'volume_button']
-      [company_name + ' Stock High Prices ($) for the Last 5 Years', 'Price ($)', 'Date', 'high_button'],  
-      [company_name + ' Stock Low Prices ($) for the Last 5 Years', 'Price ($)', 'Date', 'low_button'],
-      [company_name + ' Stock Opening Prices ($) for the Last 5 Years', 'Price ($)', 'Date', 'open_button'],
-      [company_name + ' Stock Closing Prices ($) for the Last 5 Years', 'Price ($)', 'Date', 'close_button'],
-      [company_name + ' Stock Volume (ea.) for the Last 5 Years', 'Units (ea.)', 'Date', 'volume_button'],
-    ];
-  
-  var current_labels;
-  
-  switch (x) {
-    case (7):
-      switch (y) {
-        case ('high'):
-          current_labels = chart_texts[0];
-          break;
-        case ('low'):
-          current_labels = chart_texts[1];
-          break;
-        case ('open'):
-          current_labels = chart_texts[2];
-          break;
-        case ('close'):
-          current_labels = chart_texts[3];
-          break;
-        case ('volume'):
-          current_labels = chart_texts[4];
-          break;
-      }
-    case (30):
-      switch (y) {
-          case ('high'):
-          current_labels = chart_texts[5];
-          break;
-        case ('low'):
-          current_labels = chart_texts[6];
-          break;
-        case ('open'):
-          current_labels = chart_texts[7];
-          break;
-        case ('close'):
-          current_labels = chart_texts[8];
-          break;
-        case ('volume'):
-          current_labels = chart_texts[9];
-          break;
-      }
-    case (365):
-      switch (y) {
-          case ('high'):
-          current_labels = chart_texts[10];
-          break;
-        case ('low'):
-          current_labels = chart_texts[11];
-          break;
-        case ('open'):
-          current_labels = chart_texts[12];
-          break;
-        case ('close'):
-          current_labels = chart_texts[13];
-          break;
-        case ('volume'):
-          current_labels = chart_texts[14];
-          break;
-      }
-    case (5):
-      switch (y) {
-          case ('high'):
-          current_labels = chart_texts[15];
-          break;
-        case ('low'):
-          current_labels = chart_texts[16];
-          break;
-        case ('open'):
-          current_labels = chart_texts[17];
-          break;
-        case ('close'):
-          current_labels = chart_texts[18];
-          break;
-        case ('volume'):
-          current_labels = chart_texts[19];
-      }
-  }                      
-
-  destroyCurrentChart();
+  let data;
   try {
-    data = fetchStockData();
+    data = await fetchStockData(x, y);
+    if (!data) {
+      console.error("Fetch returned no data. Aborting chart load.");
+      return; // Exit if there's no data
+    }
+  } catch (error) {
+    console.error("Error fetching stock data:", error);
+    return; // Exit the function if fetching fails
+  }
+
+  // Prepare the new data and labels
+  const values = Object.values(data);
+  const labels = values.map(value => value.date);
+  const numericalData = values.map(value => value[y]);
+  const newLabel = y.charAt(0).toUpperCase() + y.slice(1);
+
+  // Check if the chart instance already exists
+  if (currentChart) {
+    // --- UPDATE EXISTING CHART ---
+    console.log("Updating existing chart...");
+
+    // Update the data
+    currentChart.data.labels = labels;
+    currentChart.data.datasets[0].data = numericalData;
+    currentChart.data.datasets[0].label = newLabel;
+
+    // Update the options (like titles)
+    currentChart.options.plugins.title.text = current_labels.title;
+    currentChart.options.scales.y.title.text = current_labels.yAxisLabel;
+    currentChart.options.scales.x.title.text = current_labels.xAxisLabel;
+
+    // Now, call update() on the actual Chart.js instance
+    currentChart.update();
+
+  } else {
+    // --- CREATE NEW CHART ---
+    console.log("Creating new chart...");
+
     const config = {
-      type: 'line',
-      data: data,
+      type: "line",
+      data: {
+        labels: labels,
+        datasets: [{
+          label: newLabel,
+          data: numericalData,
+          borderColor: 'rgb(75, 192, 192)',
+          tension: 0.1,
+        }]
+      },
       options: {
         responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
-            position: 'top',
+            position: "top",
           },
           title: {
             display: true,
-            text: 'Chart.js Line Chart'
+            text: current_labels.title,
+          },
+        },
+        scales: {
+          y: {
+            title: {
+              display: true,
+              text: current_labels.yAxisLabel
+            }
+          },
+          x: {
+            title: {
+              display: true,
+              text: current_labels.xAxisLabel
+            }
           }
         }
       },
     };
 
-    const values = Object.values(data);
-    const labels = values.map(value => value.date);
-    const numerical_y_data = values.map(value => value[y]);
-    currentChart = new Chart(document.getElementById('lineChart'), config)
-    currentChart.options.plugins.title.text = current_labels[0];
-    currentChart.data = data;
-    // currentChart.options.scales.y.title.text = current_labels[1];
-    // currentChart.options.scales.x.title.text = current_labels[2];
-    currentChart.update();
-    
-  } catch (error) {
-      console.error('Error loading opening data:', error);
+    const ctx = document.getElementById("lineChart").getContext('2d');
+    // Store the Chart.js INSTANCE in the global variable
+    currentChart = new Chart(ctx, config);
   }
 }
 
 // Dropdown button Handling
-
-function disableActiveXButton(active) {
-  if (! ['7', '30', '365', '5', '10'].find(active)) {
-    console.error('Invalid active button ID, X-axis', active)
-  }
-  const activeButton = document.getElementById(active);
-  activeButton.classList.add('active')
-  const high = document.getElementById('7');
-  if (activeButton !== high) {
-    high.classList.remove('active');
-  }
-  const low = document.getElementById('30');
-  if (activeButton !== low) {
-    low.classList.remove('active');
-  }
-  const open = document.getElementById('365');
-  if (activeButton !== open) {
-    open.classList.remove('active');
-  }
-  const close =  document.getElementById('5');
-  if (activeButton !== close) {
-    close.classList.remove('active');
-  }
-  loadChart();
+function updateActiveButton(mainButtonId, activeId, nameMap, suffix = '') {
+    // Update main button text
+    const mainButton = document.getElementById(mainButtonId);
+    if (mainButton) {
+        mainButton.textContent = `Select: ${nameMap[activeId]}`;
+    }
+    // Update active state on dropdown items
+    const element = document.getElementById(activeId + suffix);
+    if (element && element.parentElement) {
+        const parent = element.parentElement;
+        const buttons = parent.querySelectorAll('.dropdown-item'); // Assuming items have this class
+        buttons.forEach(button => {
+            button.classList.remove('active');
+        });
+        const activeButton = document.getElementById(activeId + suffix);
+        if (activeButton) {
+            activeButton.classList.add('active');
+        }
+    }
 }
-
-function disableActiveYButton(active) {
-  if (! ['high_button', 'low_button', 'open_button', 'close_button', 'volume_button'].find(active)) {
-    console.error('Invalid active button ID, Y-axis', active);
-  }
-  const activeButton = document.getElementById(active);
-  activeButton.classList.add('active')
-  const high = document.getElementById('high_button');
-  if (activeButton !== high) {
-    high.classList.remove('active');
-  }
-  const low = document.getElementById('low_button');
-  if (activeButton !== low) {
-    low.classList.remove('active');
-  }
-  const open = document.getElementById('open_button');
-  if (activeButton !== open) {
-    open.classList.remove('active');
-  }
-  const close =  document.getElementById('close_button');
-  if (activeButton !== close) {
-    close.classList.remove('active');
-  }
-  const volume = document.getElementById('volume_button');
-  if (activeButton !== volume) {
-    volume.classList.remove('active');
-  }
-  loadChart();
-}
-
-// Load the default chart on page load
-document.addEventListener('DOMContentLoaded', function() {
-  loadChart();
+document.addEventListener("DOMContentLoaded", function () {
+    updateActiveButton(period_button_id, x, period_name_map, period_name_suffix);
+    updateActiveButton(category_button_id, y, category_name_map, category_name_suffix);
+    loadChart();
 });

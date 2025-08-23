@@ -86,25 +86,25 @@ def update_model():
         for company in companies:
             if should_api_call_be_made(company):
                 logging.warning(f'update_model(): decision was made to update for {company}')
-                # data = make_api_call(company)
-                # try:
-                #     company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
-                # except AttributeError as e:
-                #     logging.error(f'update_model(): API data incorrect: {e}')
-                #     continue
-                # if not is_company_in_db_by_symbol(company):
-                #     add_company_to_table(companies[company], company)
-                # company_instance = get_company_instance_by_symbol(company)
-                # # if is_data_stale(company_instance=company_instance):
-                # # latest_datapoint_for_company = get_latest_entry_date_for_a_company_in_datapoints(company)
-                # for datapoint in data["Time Series (Daily)"]:
-                #     if not is_date_in_db(datapoint):
-                #         add_date_to_table(datapoint)
-                #     date_instance = get_date_instance_by_date(datapoint)
-                #     if not is_datapoint_in_db(company_instance, date_instance):
-                #         add_time_series_daily_datapoint(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
-                #     else:
-                #         continue
+                data = make_api_call(company)
+                try:
+                    company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
+                except AttributeError as e:
+                    logging.error(f'update_model(): API data incorrect: {e}')
+                    continue
+                if not is_company_in_db_by_symbol(company):
+                    add_company_to_table(companies[company], company)
+                company_instance = get_company_instance_by_symbol(company)
+                # if is_data_stale(company_instance=company_instance):
+                # latest_datapoint_for_company = get_latest_entry_date_for_a_company_in_datapoints(company)
+                for datapoint in data["Time Series (Daily)"]:
+                    if not is_date_in_db(datapoint):
+                        add_date_to_table(datapoint)
+                    date_instance = get_date_instance_by_date(datapoint)
+                    if not is_datapoint_in_db(company_instance, date_instance):
+                        add_time_series_daily_datapoint(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
+                    else:
+                        continue
     else:
         check_company_symbol = "AAPL"
         check_date = "2024-06-14"

@@ -27,6 +27,7 @@ SECRET_KEY = os.environ.get('mvp_stock_app_security_key')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = 'RENDER' not in os.environ
 USE_REAL_DATA = True # Calling from persistent online DB now, no need to rely on practice data.
+INITIAL_DATACOLLECTION_COMPLETE = True
 
 ALLOWED_HOSTS = []
 

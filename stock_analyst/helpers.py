@@ -7,10 +7,11 @@ import httpx
 
 import requests
 from asgiref.sync import sync_to_async
+# from django.channels.db import database_sync_to_async
 
 from . import models
 from .models import Companies, Dates, Datapoints, Update
-from mvp_stock_app.settings import USE_REAL_DATA
+from mvp_stock_app.settings import USE_REAL_DATA, INITIAL_DATACOLLECTION_COMPLETE
 
 site = f'https://www.alphavantage.co/query'
 function_mode = 'TIME_SERIES_DAILY'
@@ -25,6 +26,7 @@ if USE_REAL_DATA:
         'MSFT': "Microsoft",
         'GOOG': "Google",
         'NVDA': "Nvidia",
+        'OPEN': "Opendoor Technologies Inc."
     }
 else:
     companies = {
@@ -44,79 +46,84 @@ api_key = os.environ.get('alpha_vantage_api_key')
 
 
 
-async def should_api_call_be_made(company_symbol=None):
+def should_api_call_be_made(company_symbol=None):
     if company_symbol is None:
-        latest_entry = await sync_to_async(get_latest_entry_date_in_datapoints)()
+        latest_entry = get_latest_entry_date_in_datapoints()
         return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
     else:
-        latest_entry = await sync_to_async(get_latest_entry_date_for_a_company_in_datapoints)(company_symbol)
+        latest_entry = get_latest_entry_date_for_a_company_in_datapoints(company_symbol)
+        logging.warning(f'should_api_call_be_made(): examining for {company_symbol}, latest_entry={latest_entry, type(latest_entry)}')
         if latest_entry is None:
             return True
         else:
             return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
 #
-async def get_latest_entry_date_in_datapoints():
+def get_latest_entry_date_in_datapoints():
     query = """SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_joined
                FROM stock_analyst_datapoints
                JOIN stock_analyst_dates ON stock_analyst_datapoints.date_id = stock_analyst_dates.id
                ORDER BY stock_analyst_dates.date DESC"""
-    latest_entry = await sync_to_async(Datapoints.objects.raw)(query)
+    latest_entry = Datapoints.objects.raw(query)
     return latest_entry[0].date_joined
 
-async def get_latest_entry_date_for_a_company_in_datapoints(company_symbol):
+def get_latest_entry_date_for_a_company_in_datapoints(company_symbol):
+    if not is_company_in_db_by_symbol(company_symbol):
+        return None
     query = """SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_joined
                FROM stock_analyst_datapoints
                JOIN stock_analyst_dates ON stock_analyst_datapoints.date_id = stock_analyst_dates.id
                WHERE stock_analyst_datapoints.company_id_id = %s
                ORDER BY stock_analyst_dates.date DESC"""
     company_id = get_company_id_by_symbol(company_symbol)
-    latest_entry = await sync_to_async(Datapoints.objects.raw)(query, [company_id,])
+    latest_entry = Datapoints.objects.raw(query, [company_id,])
     if not latest_entry:
         return None
+    logging.debug(f'get_latest_entry_date_for_a_company_in_datapoints(): data gathered={latest_entry, type(latest_entry)}')
     return latest_entry[0].date_joined
 
-async def update_model():
+def update_model():
     if USE_REAL_DATA:
         for company in companies:
             if should_api_call_be_made(company):
-                data = await make_api_call(company)
-                try:
-                    company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
-                except BaseException as e:
-                    print(e)
-                    continue
-                if not await sync_to_async(is_company_in_db_by_symbol)(company):
-                    await sync_to_async(add_company_to_table)(companies[company], company)
-                company_instance = await sync_to_async(get_company_instance_by_symbol)(company)
-                # if await sync_to_async(is_data_stale)(company_instance=company_instance):
-                # latest_datapoint_for_company = await sync_to_async(get_latest_entry_date_for_a_company_in_datapoints)(company)
-                for datapoint in data["Time Series (Daily)"]:
-                    if not await sync_to_async(is_date_in_db)(datapoint):
-                        await sync_to_async(add_date_to_table)(datapoint)
-                    date_instance = await sync_to_async(get_date_instance_by_date)(datapoint)
-                    if not await sync_to_async(is_datapoint_in_db)(company_instance, date_instance):
-                        await sync_to_async(add_time_series_daily_datapoint)(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
-                    else:
-                        continue
+                logging.warning(f'update_model(): decision was made to update for {company}')
+                # data = make_api_call(company)
+                # try:
+                #     company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
+                # except AttributeError as e:
+                #     logging.error(f'update_model(): API data incorrect: {e}')
+                #     continue
+                # if not is_company_in_db_by_symbol(company):
+                #     add_company_to_table(companies[company], company)
+                # company_instance = get_company_instance_by_symbol(company)
+                # # if is_data_stale(company_instance=company_instance):
+                # # latest_datapoint_for_company = get_latest_entry_date_for_a_company_in_datapoints(company)
+                # for datapoint in data["Time Series (Daily)"]:
+                #     if not is_date_in_db(datapoint):
+                #         add_date_to_table(datapoint)
+                #     date_instance = get_date_instance_by_date(datapoint)
+                #     if not is_datapoint_in_db(company_instance, date_instance):
+                #         add_time_series_daily_datapoint(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
+                #     else:
+                #         continue
     else:
         check_company_symbol = "AAPL"
         check_date = "2024-06-14"
-        if await sync_to_async(is_datapoint_in_db)(get_company_instance_by_symbol(check_company_symbol), get_date_instance_by_date(check_date)):
+        if is_datapoint_in_db(get_company_instance_by_symbol(check_company_symbol), get_date_instance_by_date(check_date)):
             return
         else:
             for file in ['query.json', 'query1.json', 'query2.json']:
                 with open(f'stock_analyst/model/{file}', 'r') as data:
                     data_cache = json.load(data)
-                    if not await sync_to_async(is_company_in_db_by_symbol)(data_cache["Meta Data"]["2. Symbol"]):
+                    if not is_company_in_db_by_symbol(data_cache["Meta Data"]["2. Symbol"]):
                         company_symbol = data_cache["Meta Data"]["2. Symbol"]
-                        await sync_to_async(add_company_to_table)(companies[company_symbol], company_symbol)
-                    company_instance = await sync_to_async(get_company_instance_by_symbol)(company_symbol)
+                        add_company_to_table(companies[company_symbol], company_symbol)
+                    company_instance = get_company_instance_by_symbol(company_symbol)
                     for datapoint in data_cache["Time Series (Daily)"]:
-                        if not await sync_to_async(is_date_in_db)(datapoint):
-                            await sync_to_async(add_date_to_table)(datapoint)
-                        date_instance = await sync_to_async(get_date_instance_by_date)(datapoint)
-                        if not await sync_to_async(is_datapoint_in_db)(company_instance, date_instance):
-                            await sync_to_async(add_time_series_daily_datapoint)(data_cache["Time Series (Daily)"][datapoint], company_instance, date_instance)
+                        if not is_date_in_db(datapoint):
+                            add_date_to_table(datapoint)
+                        date_instance = get_date_instance_by_date(datapoint)
+                        if not is_datapoint_in_db(company_instance, date_instance):
+                            add_time_series_daily_datapoint(data_cache["Time Series (Daily)"][datapoint], company_instance, date_instance)
 
 
 #
@@ -274,12 +281,15 @@ def main_data_collector():
     json_data = {}
     for company in companies:
         logging.debug(f'main_data_collecter(): attempting call for company={company}')
+        if not is_company_in_db_by_symbol(company):
+            add_company_to_table(companies[company], company)
         company_data = get_company_id_instance_by_symbol(company)
         data = get_latest_datapoint_by_company_id(company_data)
         if not data:
             continue
         logging.debug(f'main_data_collector(): data.date_string={data.date_string}, type(data.date_string)={type(data.date_string)}')
         json_data.setdefault(company, {'company_name': company_data.company_name,
+                                       'company_id': company_data.id,
                                        'abbreviation': company,
                                        'high': data.high,
                                        'low': data.low,
@@ -341,9 +351,19 @@ def is_datapoint_in_db(company_instance, date_instance):
         return True
     return False
 
-async def make_api_call(company_symbol:str):
-    logging.debug(f'gathering data for {company_symbol}')
-    data = httpx.get(url=site, params={'function': function_mode, 'symbol': company_symbol, 'apikey': api_key})
+def make_api_call(company_symbol:str):
+    logging.warning(f'gathering data for {company_symbol}')
+    if not INITIAL_DATACOLLECTION_COMPLETE:
+        data = requests.get(url=site, params={'function': function_mode,
+                                           'symbol': company_symbol,
+                                           'outputsize': 'full',
+                                           'apikey': api_key}
+                         )
+    else:
+        data = requests.get(url=site, params={'function': function_mode,
+                                           'symbol': company_symbol,
+                                           'apikey': api_key},
+                        )
     if data.status_code == 200:
         logging.debug(f'successful call for {company_symbol} data, {data.url}')
         # save_to_file(data.json(), f'{company.lower()}_data.json')
@@ -351,3 +371,51 @@ async def make_api_call(company_symbol:str):
     else:
         raise ValueError(
             f'API data requisition failed, symbol({company_symbol}), status code and response: {data.status_code, data.text}')
+
+def detail_build(company_id):
+    company_info = get_company_instance_by_id(company_id)
+    page_data = {'company_id': company_info.id, 'company_name': company_info.company_name}
+    return page_data
+
+def detail_view_data_collector(company_id, category_id, period):
+    if not isinstance(company_id, int) or company_id <= 0:
+        raise ValueError("Invalid company ID provided.")
+
+    period_map = {7: 7, 30: 31, 365: 365, 5: 5 * 365, 10: 3650}
+    number_of_entries = period_map.get(period)
+    if period is None:
+        raise ValueError("Invalid period ID provided.")
+
+    category_map = {1: 'high', 2: 'low', 3: 'open', 4: 'close', 5: 'volume'}
+    category = category_map.get(category_id)
+    if category is None:
+        raise ValueError("Invalid category ID provided.")
+
+    # query = f'''SELECT {category}, date, stock_analyst_datapoints.id
+    #             FROM stock_analyst_datapoints
+    #             JOIN stock_analyst_dates AS date_ids
+    #             ON date_ids.id = stock_analyst_datapoints.date_id
+    #             WHERE stock_analyst_datapoints.company_id_id = %s
+    #             ORDER BY date_ids.date DESC
+    #             LIMIT %s;'''
+    # data = Datapoints.objects.raw(query, [company_id, number_of_entries, ])
+
+    # Use the ORM to fetch the data
+    data = (
+        Datapoints.objects
+        .filter(company_id_id=company_id)
+        .select_related('date')  # Assuming 'date' is the related field name
+        .order_by('-date__date')  # Assuming 'date' is the related model's field
+        [:number_of_entries]  # Limit the number of entries
+    )
+
+    output = {}
+    for datapoint in data:
+        # Fetch the Dates instance corresponding to the date
+        date_instance = Dates.objects.get(date=datapoint.date.date)  # Adjust this line as needed
+        value = getattr(datapoint, category)
+        output.setdefault(
+            date_instance.date.strftime(format='%m/%d/%y'),
+            {category: value, 'date': date_instance.date.strftime(format='%m/%d/%y')}
+        )
+    return output

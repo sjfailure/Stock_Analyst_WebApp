@@ -1,3 +1,4 @@
+import logging
 import os
 from pathlib import Path
 
@@ -12,7 +13,7 @@ def get_file_contents(filename):
             # with our API key
             return f.read().strip()
     except FileNotFoundError:
-        print("'%s' file not found" % filename)
+       logging.error("'%s' file not found" % filename)
 
 
 api_file = os.path.join(Path(__file__).resolve().parent.parent, 'model/apikey')

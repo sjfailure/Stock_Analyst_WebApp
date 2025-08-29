@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+      {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mos' Stock Analysis</title>
+      <link rel="stylesheet" href="{% static 'stock_analyst/css/style1.css' %}">
+<!--   <link rel="stylesheet" href="style.css">-->
+   <script src="{% static 'stock_analyst/js/detail-chart-loader.js' %}"></script>
+<!--  <script src="detail-chart-loader.js"></script>-->
+    <script>
+        // Embed the company ID into a JavaScript variable
+        const company_id = {{ company_id }};
+        const company_name = '{{ company_name }}';
+    </script>
+</head>
+<body>
+    <header>
+        <h1>Stock Data and Analysis for {{ company_name }}</h1>
+    </header>
+
+    <main>
+      <div class="text-right">
+        <div class="dropdown d-inline-block mr-2">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuyButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Select Category
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuyButton">
+            <a class="dropdown-item" id='high_button' href="javascript:void(0)" onclick="loadCharty('high')">Highs</a>
+            <a class="dropdown-item" id='low_button'href="javascript:void(0)" onclick="loadCharty('low')">Lows</a>
+            <a class="dropdown-item" id='open_button'href="javascript:void(0)" onclick="loadCharty('open')">Open</a>
+            <a class="dropdown-item" id='close_button'href="javascript:void(0)" onclick="loadCharty('close')">Close</a>
+            <a class="dropdown-item" id='volume_button'href="javascript:void(0)" onclick="loadCharty('volume')">Volume</a>
+          </div>
+        </div>
+
+        <div class="dropdown d-inline-block ">
+          <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuxButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            Select Period
+          </button>
+          <div class="dropdown-menu" aria-labelledby="dropdownMenuxButton">
+            <a class="dropdown-item" id='7' href="javascript:void(0)" onclick="loadChartx('7')">7-Days </a>
+            <a class="dropdown-item" id='30' href="javascript:void(0)" onclick="loadChartx('30')">30-Days</a>
+            <a class="dropdown-item" id='365' href="javascript:void(0)" onclick="loadChartx('365')">1-Year</a>
+            <a class="dropdown-item" id='5' href="javascript:void(0)" onclick="loadChartx('5')">5-Years</a>
+            <a class="dropdown-item" id='10' href="javascript:void(0)" onclick="loadChartx('10')">10-Years</a>
+          </div>
+        </div>
+      </div>
+    <divstyle="width: 100%; max-width: 800px; margin-top: 2rem;">
+        <canvas id="lineChart" width="400" height="200"></canvas>
+    </div>
+
+     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+        <section>
+            <h2>About</h2>
+            <p>This is a sample project to demonstrate my development capabilities. For further information, please reach out to me by <a href="mailto:sj_martin2023@hotmail.com">email</a>.</p>
+            <p>This web application is built from scratch, using the Django framework, Render hosting, and an Aiven PostgreSQL database. For more information, visit my <a href=https://github.com/sjfailure/Stock_Analyst_WebApp/tree/render"> Github Repository.</a></p>
+
+        </section>
+
+
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Stamos Martin. All rights reserved.</p>
+    </footer>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.12.9/dist/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+
+       <script src="{% static 'stock_analyst/js/script.js' %}"></script>
+<!--    <script src="script.js"></script>-->
+</body>
+</html>

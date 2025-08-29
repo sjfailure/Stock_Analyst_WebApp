@@ -59,7 +59,7 @@ create_table_query5 = 'ALTER TABLE DataPoints ADD CONSTRAINT fk_date_to_dates FO
 
 
 def create_db(db_url=db_name):
-    print(f'TEST: create_db to:{db_url}')
+    logging.debug(f'TEST: create_db to:{db_url}')
     logging.info('database does not exist, creating')
     cur = connection.cursor()
     logging.debug(msg=f'executing query: {create_table_query}')
@@ -236,11 +236,11 @@ def check_data_point_exists(cursor, table_name, column_name, value):
     return cursor.fetchone()[0] > 0  # Get the first element from the fetchone tuple
 
 def get_company_id_by_name(company_name):
-    print(f"TEST LOG get_company_id(): company_name={company_name}")
+    logging.debug(f"TEST LOG get_company_id(): company_name={company_name}")
     query = "SELECT id FROM Companies WHERE company_name=%s"
     # answer = select_query(query, [company_name,])
     answer = select_query("SELECT id FROM Companies WHERE company_name=%s", [company_name])
-    print(f'TEST LOG get_company_id(), answer = {answer}')
+    logging.debug(f'TEST LOG get_company_id(), answer = {answer}')
     if not answer:
         raise ValueError(f'Database yielded no data for query "{query}" %s="{company_name}"')
     return answer[0][0]

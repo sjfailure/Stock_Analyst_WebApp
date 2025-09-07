@@ -151,19 +151,6 @@ def get_company_instance_by_symbol(symbol: str):
 
 def get_date_instance_by_date(date: str):
     return Dates.objects.get(date=date)
-#
-
-#
-def get_latest_entry_date_in_datapoints():
-    logging.debug(f'get_latest_entry_date_in_datapoints(): start of function, full dataset in datapoints={[entry for entry in Datapoints.objects.all()]}')
-    query = """SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_joined
-               FROM stock_analyst_datapoints
-               JOIN stock_analyst_dates ON stock_analyst_datapoints.date_id = stock_analyst_dates.id
-               ORDER BY stock_analyst_dates.date DESC"""
-    latest_entry = Datapoints.objects.raw(query)
-    if not latest_entry:
-        return '1900-01-01'
-    return latest_entry[0].date_joined
 
 def get_latest_datapoint_by_company_id(company_id_instance):
     query = ("""SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_string
@@ -191,6 +178,17 @@ def get_latest_entry_date_for_a_company_in_datapoints(company_symbol):
     logging.debug(f'get_latest_entry_date_for_a_company_in_datapoints(): data gathered={latest_entry, type(latest_entry)}')
     return latest_entry[0].date_joined
 
+def get_latest_entry_date_in_datapoints():
+    logging.debug(f'get_latest_entry_date_in_datapoints(): start of function, full dataset in datapoints={[entry for entry in Datapoints.objects.all()]}')
+    query = """SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_joined
+               FROM stock_analyst_datapoints
+               JOIN stock_analyst_dates ON stock_analyst_datapoints.date_id = stock_analyst_dates.id
+               ORDER BY stock_analyst_dates.date DESC"""
+    latest_entry = Datapoints.objects.raw(query)
+    if not latest_entry:
+        return '1900-01-01'
+    return latest_entry[0].date_joined
+
 def is_company_in_db_by_symbol(symbol: str):
     logging.debug(f'is_company_in_db_by_symbol(): start of function, input: symbol={symbol}')
     if type(symbol) is not type('str'):
@@ -214,6 +212,65 @@ def is_date_in_db(date: str):
     if Dates.objects.filter(date=date):
         return True
     return False
+
+def main_data_collector():
+    json_data = {}
+    for company in companies:
+        logging.debug(f'main_data_collecter(): attempting call for company={company}')
+        if not is_company_in_db_by_symbol(company):
+            add_company_to_table(companies[company], company)
+        company_data = get_company_instance_by_symbol(company)
+        data = get_latest_datapoint_by_company_id(company_data)
+        if not data:
+            continue
+        logging.debug(f'main_data_collector(): data.date_string={data.date_string}, type(data.date_string)={type(data.date_string)}')
+        json_data.setdefault(company, {'company_name': company_data.company_name,
+                                       'company_id': company_data.id,
+                                       'abbreviation': company,
+                                       'high': data.high,
+                                       'low': data.low,
+                                       'open': data.open,
+                                       'close': data.close,
+                                       'volume': data.volume,
+                                       'date': data.date_string.strftime(format='%m/%d/%y'),
+                                       }
+                             )
+    return json_data
+
+def make_api_call(company_symbol:str):
+    logging.debug(f'gathering data for {company_symbol}')
+    if not INITIAL_DATACOLLECTION_COMPLETE:
+        data = requests.get(url=site, params={'function': function_mode,
+                                           'symbol': company_symbol,
+                                           'outputsize': 'full',
+                                           'apikey': api_key}
+                         )
+    else:
+        data = requests.get(url=site, params={'function': function_mode,
+                                           'symbol': company_symbol,
+                                           'apikey': api_key},
+                        )
+    if data.status_code == 200:
+        logging.debug(f'successful call for {company_symbol} data, {data.url}')
+        # save_to_file(data.json(), f'{company.lower()}_data.json')
+        return data.json()
+    else:
+        raise ValueError(
+            f'API data requisition failed, symbol({company_symbol}), status code and response: {data.status_code, data.text}')
+
+def should_api_call_be_made(company_symbol=None):
+    if company_symbol is None:
+        latest_entry = get_latest_entry_date_in_datapoints()
+        return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
+    elif type(company_symbol) is not type('str'):
+        raise TypeError(f'company_symbol must be None or string, not {type(company_symbol)}')
+    else:
+        latest_entry = get_latest_entry_date_for_a_company_in_datapoints(company_symbol)
+        logging.warning(f'should_api_call_be_made(): examining for {company_symbol}, latest_entry={latest_entry, type(latest_entry)}')
+        if latest_entry is None:
+            return True
+        else:
+            return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
 
 def update_model():
     if USE_REAL_DATA:
@@ -258,8 +315,6 @@ def update_model():
                         date_instance = get_date_instance_by_date(datapoint)
                         if not is_datapoint_in_db(company_instance, date_instance):
                             add_time_series_daily_datapoint(data_cache["Time Series (Daily)"][datapoint], company_instance, date_instance)
-
-
 #
 #
 
@@ -341,179 +396,3 @@ def update_model():
 #     return x
 #
 #
-# def add_times_series_daily_datapoint(json_data):
-#     logging.debug(f'add_times_series_daily_datapoint(): incoming json_data \n{pprint.pprint(json_data)}')
-#     company_symbol = json_data["Meta Data"]["2. Symbol"]
-#     # should we bother?  is the data point already present in the model?
-#
-#     if not company_symbol in companies:
-#         logging.debug(f'get_practice_data(): symbol {company_symbol} not in companies dict.')
-#         companies.setdefault(company_symbol, None)
-#     if not Companies.objects.filter(symbol=company_symbol):
-#         new_company_entry = Companies(
-#             symbol=company_symbol,
-#             company_name=companies[company_symbol]
-#         )
-#         new_company_entry.save()
-#     for activity_date in json_data["Time Series (Daily)"]:
-#         if not Dates.objects.filter(date=activity_date):
-#             new_date_entry = Dates(
-#                 date=activity_date
-#             )
-#             new_date_entry.save()
-#         if not Datapoints.objects.filter(
-#                 date=get_date_id_instance(activity_date),
-#                 company_id=get_company_id_instance_by_symbol(company_symbol)
-#         ):
-#             new_datapoint = Datapoints(
-#                 date=get_date_id_instance(activity_date),
-#                 company_id=get_company_id_instance_by_symbol(company_symbol),
-#                 open=json_data["Time Series (Daily)"][activity_date]["1. open"],
-#                 close=json_data["Time Series (Daily)"][activity_date]["4. close"],
-#                 high=json_data["Time Series (Daily)"][activity_date]["2. high"],
-#                 low=json_data["Time Series (Daily)"][activity_date]["3. low"],
-#                 volume=json_data["Time Series (Daily)"][activity_date]["5. volume"],
-#             )
-#             new_datapoint.save()
-#     return
-#
-#
-def main_data_collector():
-    json_data = {}
-    for company in companies:
-        logging.debug(f'main_data_collecter(): attempting call for company={company}')
-        if not is_company_in_db_by_symbol(company):
-            add_company_to_table(companies[company], company)
-        company_data = get_company_instance_by_symbol(company)
-        data = get_latest_datapoint_by_company_id(company_data)
-        if not data:
-            continue
-        logging.debug(f'main_data_collector(): data.date_string={data.date_string}, type(data.date_string)={type(data.date_string)}')
-        json_data.setdefault(company, {'company_name': company_data.company_name,
-                                       'company_id': company_data.id,
-                                       'abbreviation': company,
-                                       'high': data.high,
-                                       'low': data.low,
-                                       'open': data.open,
-                                       'close': data.close,
-                                       'volume': data.volume,
-                                       'date': data.date_string.strftime(format='%m/%d/%y'),
-                                       }
-                             )
-    return json_data
-
-
-
-#
-#
-# # TODO introduce fail safe code for failed API call
-# async def get_all_company_tsd_data(complete=False):
-#     for company in companies:
-#         logging.debug(f'gathering data for {company}')
-#         if complete:
-#             data = httpx.get(url=site, params={'function': function_mode, 'symbol': company, 'outputsize': 'full',
-#                                                'apikey': api_key})
-#         else:
-#             data = httpx.get(url=site, params={'function': function_mode, 'symbol': company, 'apikey': api_key})
-#         if data.status_code == 200:
-#             logging.debug(f'successful call for {company} data, {data.url}')
-#             # save_to_file(data.json(), f'{company.lower()}_data.json')
-#             yield data.json()
-#         else:
-#             raise ValueError(
-#                 f'API data requisition failed, symbol({company}), status code and response: {data.status_code, data.text}')
-#
-#
-# def get_latest_update():
-#     query = "SELECT * FROM stock_analyst_dates ORDER BY date DESC"
-#     latest_update = Dates.objects.raw(query)
-#     if not latest_update[0]:
-#         return '1900-01-01'
-#     return latest_update[0].date
-#
-#
-# def set_last_update_default():
-#     if not Update.last_update:
-#         Update.last_update = datetime.datetime(day=1, month=1, year=1990)
-#     return
-#
-
-
-def make_api_call(company_symbol:str):
-    logging.debug(f'gathering data for {company_symbol}')
-    if not INITIAL_DATACOLLECTION_COMPLETE:
-        data = requests.get(url=site, params={'function': function_mode,
-                                           'symbol': company_symbol,
-                                           'outputsize': 'full',
-                                           'apikey': api_key}
-                         )
-    else:
-        data = requests.get(url=site, params={'function': function_mode,
-                                           'symbol': company_symbol,
-                                           'apikey': api_key},
-                        )
-    if data.status_code == 200:
-        logging.debug(f'successful call for {company_symbol} data, {data.url}')
-        # save_to_file(data.json(), f'{company.lower()}_data.json')
-        return data.json()
-    else:
-        raise ValueError(
-            f'API data requisition failed, symbol({company_symbol}), status code and response: {data.status_code, data.text}')
-
-def should_api_call_be_made(company_symbol=None):
-    if company_symbol is None:
-        latest_entry = get_latest_entry_date_in_datapoints()
-        return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
-    elif type(company_symbol) is not type('str'):
-        raise TypeError(f'company_symbol must be None or string, not {type(company_symbol)}')
-    else:
-        latest_entry = get_latest_entry_date_for_a_company_in_datapoints(company_symbol)
-        logging.warning(f'should_api_call_be_made(): examining for {company_symbol}, latest_entry={latest_entry, type(latest_entry)}')
-        if latest_entry is None:
-            return True
-        else:
-            return datetime.date.today() - datetime.date.fromisoformat(str(latest_entry)) > datetime.timedelta(days=1)
-
-def update_model():
-    if USE_REAL_DATA:
-        for company in companies:
-            if should_api_call_be_made(company):
-                logging.debug(f'update_model(): decision was made to update for {company}')
-                data = make_api_call(company)
-                try:
-                    company_symbol = data["Meta Data"]["2. Symbol"] # Currently, just a check that JSON data returned by API
-                except AttributeError as e:
-                    logging.error(f'update_model(): API data incorrect: {e}')
-                    continue
-                if not is_company_in_db_by_symbol(company):
-                    add_company_to_table(companies[company], company)
-                company_instance = get_company_instance_by_symbol(company)
-                # if is_data_stale(company_instance=company_instance):
-                # latest_datapoint_for_company = get_latest_entry_date_for_a_company_in_datapoints(company)
-                for datapoint in data["Time Series (Daily)"]:
-                    if not is_date_in_db(datapoint):
-                        add_date_to_table(datapoint)
-                    date_instance = get_date_instance_by_date(datapoint)
-                    if not is_datapoint_in_db(company_instance, date_instance):
-                        add_time_series_daily_datapoint(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
-                    else:
-                        continue
-    else:
-        check_company_symbol = "AAPL"
-        check_date = "2024-06-14"
-        if is_datapoint_in_db(get_company_instance_by_symbol(check_company_symbol), get_date_instance_by_date(check_date)):
-            return
-        else:
-            for file in ['query.json', 'query1.json', 'query2.json']:
-                with open(f'stock_analyst/model/{file}', 'r') as data:
-                    data_cache = json.load(data)
-                    if not is_company_in_db_by_symbol(data_cache["Meta Data"]["2. Symbol"]):
-                        company_symbol = data_cache["Meta Data"]["2. Symbol"]
-                        add_company_to_table(companies[company_symbol], company_symbol)
-                    company_instance = get_company_instance_by_symbol(company_symbol)
-                    for datapoint in data_cache["Time Series (Daily)"]:
-                        if not is_date_in_db(datapoint):
-                            add_date_to_table(datapoint)
-                        date_instance = get_date_instance_by_date(datapoint)
-                        if not is_datapoint_in_db(company_instance, date_instance):
-                            add_time_series_daily_datapoint(data_cache["Time Series (Daily)"][datapoint], company_instance, date_instance)

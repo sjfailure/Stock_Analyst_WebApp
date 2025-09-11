@@ -24,20 +24,6 @@ def main_data_stream(request):
     data = helpers.main_data_collector()
     return JsonResponse(data)
 
-def db_health_check(request):
-    """
-    A simple view to check the database connection.
-    .exists() is very efficient as it translates to a
-    `SELECT 1 FROM ... LIMIT 1` query.
-    """
-    try:
-        # Perform a lightweight, fast query
-        is_db_alive = Dates.objects.exists()
-        if is_db_alive or not is_db_alive: # This ensures the query runs
-             return JsonResponse({"status": "ok", "database_connection": "alive"})
-    except Exception as e:
-        return JsonResponse({"status": "error", "database_connection": "dead", "error": str(e)}, status=500)
-
 def detail(request, company_id):
     data = helpers.detail_build(company_id)
     logging.warning(f'detail(): context data for html={data}')

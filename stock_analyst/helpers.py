@@ -99,8 +99,6 @@ def detail_view_data_collector(company_id, category_id, period):
     if not isinstance(company_id, int) or company_id <= 0:
         raise ValueError("Invalid company ID provided.")
 
-    period_map = {7: 7, 30: 31, 365: 365, 5: 5 * 365, 10: 3650}
-    number_of_entries = period_map.get(period)
     if period is None:
         raise ValueError("Invalid period ID provided.")
 
@@ -108,35 +106,66 @@ def detail_view_data_collector(company_id, category_id, period):
     category = category_map.get(category_id)
     if category is None:
         raise ValueError("Invalid category ID provided.")
+    data = None
 
-    # query = f'''SELECT {category}, date, stock_analyst_datapoints.id
-    #             FROM stock_analyst_datapoints
-    #             JOIN stock_analyst_dates AS date_ids
-    #             ON date_ids.id = stock_analyst_datapoints.date_id
-    #             WHERE stock_analyst_datapoints.company_id_id = %s
-    #             ORDER BY date_ids.date DESC
-    #             LIMIT %s;'''
-    # data = Datapoints.objects.raw(query, [company_id, number_of_entries, ])
-
-    # Use the ORM to fetch the data
-    data = (
-        Datapoints.objects
-        .filter(company_id_id=company_id)
-        .select_related('date')  # Assuming 'date' is the related field name
-        .order_by('-date__date')  # Assuming 'date' is the related model's field
-        [:number_of_entries]  # Limit the number of entries
-    )
+    if period == 7 or period == 30:
+        number_of_entries = 7
+        if period == 30:
+            number_of_entries = 31
+        data = (
+            Datapoints.objects
+            .filter(company_id_id=company_id)
+            .select_related('date')  # Assuming 'date' is the related field name
+            .order_by('-date__date')  # Assuming 'date' is the related model's field
+            [:number_of_entries]  # Limit the number of entries
+        )
+    elif period == 365 or period == 5 or period == 10:
+        data = []
+        modifier = 15
+        static = 365
+        company_instance = get_company_instance_by_id(company_id)
+        if period == 5:
+            modifier = 90
+            static, period = 5 * 365
+        elif period == 10:
+            modifier = 180
+            static, period = 10 * 365
+        while period >= modifier:
+            datapoint_date = datetime.date.today() - datetime.timedelta(days=static - period)
+            if is_date_in_db(datapoint_date.isoformat()):
+                date_instance = get_date_instance_by_date(datapoint_date.isoformat())
+                data.append(get_datapoint_by_date_and_company_instances(company_instance, date_instance))
+            else:
+                data.append(find_nearest_datapoint(datapoint_date, company_instance))
+            period -= modifier
 
     output = {}
     for datapoint in data:
         # Fetch the Dates instance corresponding to the date
-        date_instance = Dates.objects.get(date=datapoint.date.date)  # Adjust this line as needed
+        date_instance = datapoint.dates  # Adjust this line as needed
         value = getattr(datapoint, category)
         output.setdefault(
             date_instance.date.strftime(format='%m/%d/%y'),
             {category: value, 'date': date_instance.date.strftime(format='%m/%d/%y')}
         )
     return output
+
+def find_nearest_datapoint(date: datetime.date, company_instance):
+    modifier = 1
+    while modifier < 8:
+        test_up = date + datetime.timedelta(days=modifier)
+        test_down = date - datetime.timedelta(days=modifier)
+        if is_date_in_db(test_up.isoformat()):
+            test_date = get_date_instance_by_date(test_up.isoformat())
+            if is_datapoint_in_db(company_instance=company_instance, date_instance=test_date):
+                return get_datapoint_by_date_and_company_instances(company_instance, test_date)
+        if is_date_in_db(test_down.isoformat()):
+            test_date = get_date_instance_by_date(test_down.isoformat())
+            if is_datapoint_in_db(company_instance=company_instance, date_instance=test_date):
+                return get_datapoint_by_date_and_company_instances(company_instance, test_date)
+        modifier += 1
+    raise AssertionError(f'In attempting to find the nearest datapoint to {date.isoformat()} in DB for '
+                         f'{company_instance.symbol}, find_nearest_datapoint() came up with nothing within 7 days.')
 
 def get_company_id_by_symbol(symbol: str):
     return Companies.objects.get(symbol=symbol).id
@@ -151,6 +180,9 @@ def get_company_instance_by_symbol(symbol: str):
 
 def get_date_instance_by_date(date: str):
     return Dates.objects.get(date=date)
+
+def get_datapoint_by_date_and_company_instances(company_instance, date_instance):
+    return Datapoints.objects.get(date=date_instance, company_id=company_instance)
 
 def get_latest_datapoint_by_company_id(company_id_instance):
     query = ("""SELECT stock_analyst_datapoints.*, stock_analyst_dates.date AS date_string

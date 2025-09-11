@@ -1,4 +1,5 @@
 import logging, copy, datetime
+import random
 from copy import deepcopy
 
 from django.test import TestCase
@@ -13,13 +14,14 @@ from stock_analyst.helpers import (get_date_instance_by_date,
                                    add_time_series_daily_datapoint,
                                    should_api_call_be_made,
                                    get_company_instance_by_symbol,
-                                   get_date_instance_by_date,
                                    add_date_to_table,
                                    add_company_to_table,
                                    add_date_to_table,
                                    is_company_in_db_by_symbol,
                                    is_date_in_db,
-                                   get_latest_entry_date_in_datapoints)
+                                   get_latest_entry_date_in_datapoints,
+                                   get_company_instance_by_id,
+                                   get_latest_entry_date_for_a_company_in_datapoints)
 
 
 ## Universal Values
@@ -170,7 +172,7 @@ class AddTimeSeriesDailyDatapoint(TestCase):
         for key in data:
             data[key] = 100
         data['1. open'] = '100'
-        self.assertRaises(DataError,
+        self.assertRaises(TypeError,
                           add_time_series_daily_datapoint,
                           data,
                           get_company_instance_by_symbol("GOOG"),
@@ -178,7 +180,7 @@ class AddTimeSeriesDailyDatapoint(TestCase):
                           )
         data['1. open'] = 100
         data['2. high'] = None
-        self.assertRaises(DataError,
+        self.assertRaises(TypeError,
                           add_time_series_daily_datapoint,
                           data,
                           get_company_instance_by_symbol("GOOG"),
@@ -186,7 +188,7 @@ class AddTimeSeriesDailyDatapoint(TestCase):
                           )
         data['2. high'] = 100
         data['3. low'] = 'test'
-        self.assertRaises(DataError,
+        self.assertRaises(TypeError,
                           add_time_series_daily_datapoint,
                           data,
                           get_company_instance_by_symbol("GOOG"),
@@ -194,7 +196,7 @@ class AddTimeSeriesDailyDatapoint(TestCase):
                           )
         data['3. low'] = 100
         data['4. close'] = Dates.objects.create(date=datetime.date(day=1, month=1, year=2025)).save()
-        self.assertRaises(DataError,
+        self.assertRaises(TypeError,
                           add_time_series_daily_datapoint,
                           data,
                           get_company_instance_by_symbol("GOOG"),
@@ -202,7 +204,7 @@ class AddTimeSeriesDailyDatapoint(TestCase):
                           )
         data['4. close'] = 100
         data['5. volume'] = True
-        self.assertRaises(DataError,
+        self.assertRaises(TypeError,
                           add_time_series_daily_datapoint,
                           data,
                           get_company_instance_by_symbol("GOOG"),
@@ -247,6 +249,57 @@ class GetCompanyIDBySymbl(TestCase):
     pass
 
 
+class GetCompanyInstanceByID(TestCase):
+    """Testing functionality of helpers.get_company_instance_by_id()"""
+    """Vulnerabilities:
+    1. Should reject any non-integer input.
+    2. Should return correct ID number provided company (only used by API, should never call on a company_id 
+        not in DB)."""
+
+    test_1_id_number = None
+    test_2_id_number = None
+    test_3_id_number = None
+
+    def setUp(self):
+        x = Companies.objects.create(company_name='test company', symbol='TESC')
+        x.save()
+        self.test_1_id_number = x.id
+        x = Companies.objects.create(company_name='second_test', symbol='2TES')
+        x.save()
+        self.test_2_id_number = x.id
+        x = Companies.objects.create(company_name='third Comp Co.', symbol='TE3')
+        x.save()
+        self.test_3_id_number = x.id
+    
+    def test_rejects_non_int_input(self):
+        with self.assertRaises(TypeError):
+            get_company_instance_by_id('1')
+        with self.assertRaises(TypeError):
+            get_company_instance_by_id(True)
+        company_instance = Companies.objects.create(company_name='Test Instance', symbol='INST')
+        company_instance.save()
+        with self.assertRaises(TypeError):
+            get_company_instance_by_id(company_instance)
+        with self.assertRaises(TypeError):
+            get_company_instance_by_id([1,])
+        
+    def test_returns_accurate_id_number(self):
+        x = Companies.objects.get(id=self.test_1_id_number)
+        self.assertEqual(x, get_company_instance_by_id(self.test_1_id_number))
+        x = Companies.objects.get(id=self.test_2_id_number)
+        self.assertEqual(x, get_company_instance_by_id(self.test_2_id_number))
+        x = Companies.objects.get(id=self.test_3_id_number)
+        self.assertEqual(x, get_company_instance_by_id(self.test_3_id_number))
+        shouldnt_be_present = None
+        while True:
+            i = random.randint()
+            if i not in [self.test_1_id_number, self.test_2_id_number, self.test_3_id_number]:
+                shouldnt_be_present = i
+                break
+        with self.assertRaises(ValidationError):
+            get_company_instance_by_id(shouldnt_be_present)
+        
+
 class GetCompanyInstanceBySymbol(TestCase):
     """Testing helpers.get_company_instance_by_symbol()"""
     """Points of weakness:
@@ -274,6 +327,136 @@ class GetCompanyInstanceBySymbol(TestCase):
 
     def test_calls_out_non_existent_input(self):
         self.assertRaises(ObjectDoesNotExist, get_company_instance_by_symbol, "NPR")
+
+
+class GetDateInstanceByDate(TestCase):
+    """Testing functionality of helpers.get_date_instance_by_date()."""
+    """Vulnerabilities:
+    1. Should reject non-string input
+    2. Should reject incorrectly formatted date strings.
+    3. Should return accurate object matching date."""
+    
+    def setUp(self):
+        x = Dates.objects.create(date='1990-01-01')
+        x.save()
+        x = Dates.objects.create(date='1991-01-01')
+        x.save()
+        x = Dates.objects.create(date='1992-01-01')
+        x.save()
+        
+    def test_rejects_non_string_input(self):
+        with self.assertRaises(TypeError):
+            get_date_instance_by_date(365)
+        with self.assertRaises(TypeError):
+            get_date_instance_by_date(False)
+        with self.assertRaises(TypeError):
+            get_date_instance_by_date({'1993-01-01': 'good year...'})
+        date_instance = Dates.objects.get(id=0)
+        with self.assertRaises(TypeError):
+            get_date_instance_by_date(date_instance)
+    
+    def test_rejects_wrong_date_format(self):
+        with self.assertRaises(ValidationError):
+            get_date_instance_by_date('01-01-1990')
+        with self.assertRaises(ValidationError):
+            get_date_instance_by_date('01-01-90')
+        with self.assertRaises(ValidationError):
+            get_date_instance_by_date('90-01-01')
+        with self.assertRaises(ValidationError):
+            get_date_instance_by_date('1990/01/01')
+        with self.assertRaises(ValidationError):
+            get_date_instance_by_date('01/01/1990')
+    
+    def test_returns_accurate_instance(self):
+        first_instance = Dates.objects.get(id=0)
+        self.assertEqual(first_instance, get_date_instance_by_date('1990-01-01'))
+        second_instance = Dates.objects.get(id=1)
+        self.assertEqual(second_instance, get_date_instance_by_date('1991-01-01'))
+        third_instance = Dates.objects.get(id=2)
+        self.assertEqual(third_instance, get_date_instance_by_date('1992-01-01'))
+        with self.assertRaises(DataError):
+            get_date_instance_by_date("2000-01-01")
+        
+
+class GetLatestEntryDateForACompanyInDatapoints(TestCase):
+    """Testing the function of helpers.get_latest_entry_date_for_a_company_in_datapoints()"""
+    """Vulnerabilities:
+    1. Should reject non-string inputs
+    2. Should only return latest datapoint for designated company
+    3. Should return None if designated company does NOT have any datapoints to reference"""
+
+    def setUp(self):
+        IBM_instance = Companies.objects.create(company_name="IBM", symbol="IBM")
+        IBM_instance.save()
+        Google_instance = Companies.objects.create(company_name="Google", symbol="GOOG")
+        Google_instance.save()
+        Apple_instance = Companies.objects.create(company_name="Apple", symbol="AAPL")
+        Apple_instance.save()
+        old_date1 = Dates.objects.create(date="1990-01-01")
+        old_date1.save()
+        old_date2 = Dates.objects.create(date="1990-01-02")
+        old_date2.save()
+        old_date3 = Dates.objects.create(date="1991-01-01")
+        old_date3.save()
+        data = base_data_capsule
+        for entry in data:
+            data[entry] = 100
+        add_time_series_daily_datapoint(data, IBM_instance, old_date1)
+    
+    def test_rejects_non_str_input(self):
+        with self.assertRaises(TypeError):
+            get_latest_entry_date_for_a_company_in_datapoints(1)
+        with self.assertRaises(TypeError):
+            get_latest_entry_date_for_a_company_in_datapoints(['test co.',])
+        with self.assertRaises(TypeError):
+            get_latest_entry_date_for_a_company_in_datapoints(False)
+        with self.assertRaises(TypeError):
+            get_latest_entry_date_for_a_company_in_datapoints(None)
+        IBM_instance = Companies.objects.get(id=0)
+        with self.assertRaises(TypeError):
+            get_latest_entry_date_for_a_company_in_datapoints(IBM_instance)
+
+    def test_only_returns_latest_date(self):
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        data = {entry: 99 for (entry, v) in base_data_capsule.items()}
+        IBM_instance = get_company_instance_by_symbol('IBM')
+        old_date2 = get_date_instance_by_date('1990-01-02')
+        add_time_series_daily_datapoint(data, IBM_instance, old_date2)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-02')
+        data = {entry: 98 for (entry, v) in base_data_capsule.items()}
+        old_date3 = get_date_instance_by_date('1991-01-01')
+        add_time_series_daily_datapoint(data, IBM_instance, old_date3)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1991-01-01')
+
+    def test_only_returns_latest_date_for_designated_company(self):
+        IBM_instance = get_company_instance_by_symbol("IBM")
+        Apple_instance = get_company_instance_by_symbol('AAPL')
+        Google_instance = get_company_instance_by_symbol('GOOG')
+        date_1 = get_date_instance_by_date('1990-01-01')
+        date_2 = get_date_instance_by_date('1990-01-02')
+        date_3 = get_date_instance_by_date('1991-01-01')
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        data = {entry: 98 for (entry, v) in base_data_capsule.items()}
+        add_time_series_daily_datapoint(data, Apple_instance, date_1)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        add_time_series_daily_datapoint(data, Google_instance, date_1)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        data = {entry: 97 for (entry, v) in base_data_capsule.items()}
+        add_time_series_daily_datapoint(data, Apple_instance, date_2)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        add_time_series_daily_datapoint(data, Google_instance, date_2)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        add_time_series_daily_datapoint(data, Google_instance, date_3)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-01')
+        add_time_series_daily_datapoint(data, IBM_instance, date_2)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1990-01-02')
+        add_time_series_daily_datapoint(data, IBM_instance, date_3)
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1991-01-01')
+
+    def test_returns_none_if_no_datapoints_for_symbol(self):
+        self.assertIsNone(get_latest_entry_date_for_a_company_in_datapoints("APP"))
+        self.assertIsNone(get_latest_entry_date_for_a_company_in_datapoints("ESPN"))
+        self.assertEqual(get_latest_entry_date_for_a_company_in_datapoints('IBM'), '1991-01-01')
 
 
 class GetLatestEntryDateInDatapoints(TestCase):
@@ -596,127 +779,127 @@ class OfflineWorkerTask(TestCase):
         pass
 
 
-class ShouldApiCallBeMadeTest(TestCase):
-    """Testing:
-    1. When no company is provided, the date of the latest data for any company is the deciding factor.
-    1a. If the date is a day or more from the current date, the function returns True otherwise False.
-    2. When a company IS provided, the date of the latest data for THAT company is the deciding factor.
-    2a. If the date is a day or more from the current date, the function returns True, otherwise False.
-    3. Incorrect Uses:
-    3a. Raise a Type Error if company_symbol is not a string."""
-    def setUp(self):
-        today = Dates.objects.create(date=datetime.date.today().strftime(date_formating))
-        today.save()
-        yesterday = Dates.objects.create(date=(datetime.date.today()-datetime.timedelta(days=1)).strftime(date_formating))
-        yesterday.save()
-        last_week = Dates.objects.create(date=(datetime.date.today()-datetime.timedelta(days=7)).strftime(date_formating))
-        last_week.save()
-        tomorrow = Dates.objects.create(date=(datetime.date.today()+datetime.timedelta(days=1)).strftime(date_formating))
-        tomorrow.save()
-        ibm_company = Companies.objects.create(symbol='IBM', company_name='IBM')
-        ibm_company.save()
-        apple_company = Companies.objects.create(symbol='AAPL', company_name='Apple')
-        apple_company.save()
-        # ibm_test = Datapoints.objects.create(company_id=ibm_company, date=yesterday, open=100, high=101, low=98, close=99, volume=1000)
-        # ibm_test.save()
-        ibm_test = Datapoints.objects.create(company_id=ibm_company,
-                                             date=last_week,
-                                             open=100,
-                                             high=101,
-                                             low=98,
-                                             close=99,
-                                             volume=1000
-                                             )
-        ibm_test.save()
-        apple_test = Datapoints.objects.create(company_id=apple_company,
-                                               date=last_week,
-                                               open=100,
-                                               high=101,
-                                               low=98,
-                                               close=99,
-                                               volume=1000)
-        apple_test.save()
-
-
-    def test_is_checking_latest_for_all_companies_1(self):
-        """Asserting that function returns True when data is over a day old."""
-        """Data: IBM: [yesterday, last_week], Apple: [last_week]
-        Expecting True"""
-        self.assertTrue(should_api_call_be_made())
-        """Data: IBM: [yesterday, last_week], Apple: [yesterday, last_week]
-        Expecting True"""
-        date = Dates.objects.get(date=(datetime.date.today()-datetime.timedelta(days=1)).strftime(date_formating))
-        # date.save()
-        apple_test = Datapoints.objects.create(company_id=get_company_instance_by_symbol('AAPL'),
-                                               date=date,
-                                               open=100,
-                                               high=101,
-                                               low=98,
-                                               close=99,
-                                               volume=1000
-                                               )
-        apple_test.save()
-        self.assertTrue(should_api_call_be_made())
-
-    def test_is_checking_latest_for_all_companies_2(self):
-        """Asserting that function returns False when the latest datapoint for any company is less that a day old."""
-        """Data: IBM: [today, yesterday, last_week], Apple: [last_week]
-        Expecting True"""
-        today = datetime.date.today().strftime(date_formating)
-        add_date_to_table(today)
-        date = get_date_instance_by_date(today)
-        ibm_instance = get_company_instance_by_symbol('IBM')
-        data = copy.deepcopy(base_data_capsule)
-        for key in data:
-            data[key] = 100
-        add_time_series_daily_datapoint(data,
-                                        ibm_instance,
-                                        date)
-        self.assertFalse(should_api_call_be_made())
-
-    def test_is_checking_latest_for_specific_company_1(self):
-        """Asserting that function returns True if specified company's latest datapoint is old."""
-        """Data: IBM: [today, yesterday, last_week], Apple: [last_week]
-        Expecting True"""
-        today = datetime.date.today().strftime(date_formating)
-        add_date_to_table(today)
-        date = get_date_instance_by_date(today)
-        ibm_instance = get_company_instance_by_symbol('IBM')
-        data = copy.deepcopy(base_data_capsule)
-        for key in data:
-            data[key] = 100
-        add_time_series_daily_datapoint(data,
-                                        ibm_instance,
-                                        date)
-        self.assertTrue(should_api_call_be_made('AAPL'))
-
-    def test_is_checking_latest_for_specific_company_2(self):
-        """Asserting that function returns False if specified company's latest datapoint is NOT old."""
-        """Data: IBM: [today, yesterday, last_week], Apple: [last_week]
-                Expecting True"""
-        today = datetime.date.today().strftime(date_formating)
-        add_date_to_table(today)
-        date = get_date_instance_by_date(today)
-        ibm_instance = get_company_instance_by_symbol('IBM')
-        data = copy.deepcopy(base_data_capsule)
-        for key in data:
-            data[key] = 100
-        add_time_series_daily_datapoint(data,
-                                        ibm_instance,
-                                        date)
-        self.assertFalse(should_api_call_be_made('IBM'))
-
-    def test_calls_out_improper_input(self):
-        self.assertRaises(TypeError, add_time_series_daily_datapoint, 1, [None,], False)
-        company_instance = get_company_instance_by_symbol('IBM')
-        self.assertRaises(TypeError, add_time_series_daily_datapoint, 1, company_instance, {'test': 1})
-        date_instance = get_date_instance_by_date(
-            date=(datetime.date.today()-datetime.timedelta(days=1)).strftime(date_formating))
-        self.assertRaises(TypeError, add_time_series_daily_datapoint, 1, company_instance, date_instance)
-        data = copy.deepcopy(base_data_capsule)
-        for entry in data:
-            data[entry] = 100
-        add_time_series_daily_datapoint(data, company_instance, date_instance)
-
+# class ShouldApiCallBeMadeTest(TestCase):
+#     """Testing:
+#     1. When no company is provided, the date of the latest data for any company is the deciding factor.
+#     1a. If the date is a day or more from the current date, the function returns True otherwise False.
+#     2. When a company IS provided, the date of the latest data for THAT company is the deciding factor.
+#     2a. If the date is a day or more from the current date, the function returns True, otherwise False.
+#     3. Incorrect Uses:
+#     3a. Raise a Type Error if company_symbol is not a string."""
+#     def setUp(self):
+#         today = Dates.objects.create(date=datetime.date.today().strftime(date_formating))
+#         today.save()
+#         yesterday = Dates.objects.create(date=(datetime.date.today()-datetime.timedelta(days=1)).strftime(date_formating))
+#         yesterday.save()
+#         last_week = Dates.objects.create(date=(datetime.date.today()-datetime.timedelta(days=7)).strftime(date_formating))
+#         last_week.save()
+#         tomorrow = Dates.objects.create(date=(datetime.date.today()+datetime.timedelta(days=1)).strftime(date_formating))
+#         tomorrow.save()
+#         ibm_company = Companies.objects.create(symbol='IBM', company_name='IBM')
+#         ibm_company.save()
+#         apple_company = Companies.objects.create(symbol='AAPL', company_name='Apple')
+#         apple_company.save()
+#         # ibm_test = Datapoints.objects.create(company_id=ibm_company, date=yesterday, open=100, high=101, low=98, close=99, volume=1000)
+#         # ibm_test.save()
+#         ibm_test = Datapoints.objects.create(company_id=ibm_company,
+#                                              date=last_week,
+#                                              open=100,
+#                                              high=101,
+#                                              low=98,
+#                                              close=99,
+#                                              volume=1000
+#                                              )
+#         ibm_test.save()
+#         apple_test = Datapoints.objects.create(company_id=apple_company,
+#                                                date=last_week,
+#                                                open=100,
+#                                                high=101,
+#                                                low=98,
+#                                                close=99,
+#                                                volume=1000)
+#         apple_test.save()
+#
+#
+#     def test_is_checking_latest_for_all_companies_1(self):
+#         """Asserting that function returns True when data is over a day old."""
+#         """Data: IBM: [yesterday, last_week], Apple: [last_week]
+#         Expecting True"""
+#         self.assertTrue(should_api_call_be_made())
+#         """Data: IBM: [yesterday, last_week], Apple: [yesterday, last_week]
+#         Expecting True"""
+#         date = Dates.objects.get(date=(datetime.date.today()-datetime.timedelta(days=1)).strftime(date_formating))
+#         # date.save()
+#         apple_test = Datapoints.objects.create(company_id=get_company_instance_by_symbol('AAPL'),
+#                                                date=date,
+#                                                open=100,
+#                                                high=101,
+#                                                low=98,
+#                                                close=99,
+#                                                volume=1000
+#                                                )
+#         apple_test.save()
+#         self.assertTrue(should_api_call_be_made())
+#
+#     def test_is_checking_latest_for_all_companies_2(self):
+#         """Asserting that function returns False when the latest datapoint for any company is less that a day old."""
+#         """Data: IBM: [today, yesterday, last_week], Apple: [last_week]
+#         Expecting True"""
+#         today = datetime.date.today().strftime(date_formating)
+#         add_date_to_table(today)
+#         date = get_date_instance_by_date(today)
+#         ibm_instance = get_company_instance_by_symbol('IBM')
+#         data = copy.deepcopy(base_data_capsule)
+#         for key in data:
+#             data[key] = 100
+#         add_time_series_daily_datapoint(data,
+#                                         ibm_instance,
+#                                         date)
+#         self.assertFalse(should_api_call_be_made())
+#
+#     def test_is_checking_latest_for_specific_company_1(self):
+#         """Asserting that function returns True if specified company's latest datapoint is old."""
+#         """Data: IBM: [today, yesterday, last_week], Apple: [last_week]
+#         Expecting True"""
+#         today = datetime.date.today().strftime(date_formating)
+#         add_date_to_table(today)
+#         date = get_date_instance_by_date(today)
+#         ibm_instance = get_company_instance_by_symbol('IBM')
+#         data = copy.deepcopy(base_data_capsule)
+#         for key in data:
+#             data[key] = 100
+#         add_time_series_daily_datapoint(data,
+#                                         ibm_instance,
+#                                         date)
+#         self.assertTrue(should_api_call_be_made('AAPL'))
+#
+#     def test_is_checking_latest_for_specific_company_2(self):
+#         """Asserting that function returns False if specified company's latest datapoint is NOT old."""
+#         """Data: IBM: [today, yesterday, last_week], Apple: [last_week]
+#                 Expecting True"""
+#         today = datetime.date.today().strftime(date_formating)
+#         add_date_to_table(today)
+#         date = get_date_instance_by_date(today)
+#         ibm_instance = get_company_instance_by_symbol('IBM')
+#         data = copy.deepcopy(base_data_capsule)
+#         for key in data:
+#             data[key] = 100
+#         add_time_series_daily_datapoint(data,
+#                                         ibm_instance,
+#                                         date)
+#         self.assertFalse(should_api_call_be_made('IBM'))
+#
+#     def test_calls_out_improper_input(self):
+#         self.assertRaises(TypeError, add_time_series_daily_datapoint, 1, [None,], False)
+#         company_instance = get_company_instance_by_symbol('IBM')
+#         self.assertRaises(TypeError, add_time_series_daily_datapoint, 1, company_instance, {'test': 1})
+#         date_instance = get_date_instance_by_date(
+#             date=(datetime.date.today()-datetime.timedelta(days=1)).strftime(date_formating))
+#         self.assertRaises(TypeError, add_time_series_daily_datapoint, 1, company_instance, date_instance)
+#         data = copy.deepcopy(base_data_capsule)
+#         for entry in data:
+#             data[entry] = 100
+#         add_time_series_daily_datapoint(data, company_instance, date_instance)
+#
 
 

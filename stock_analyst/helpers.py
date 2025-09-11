@@ -142,6 +142,8 @@ def get_company_id_by_symbol(symbol: str):
     return Companies.objects.get(symbol=symbol).id
 
 def get_company_instance_by_id(id: int):
+    if type(id) is not type(1):
+        raise TypeError(f'id must be an int, not a {type(id)}')
     return Companies.objects.get(id=id)
 
 def get_company_instance_by_symbol(symbol: str):
@@ -150,6 +152,10 @@ def get_company_instance_by_symbol(symbol: str):
     return Companies.objects.get(symbol=symbol)
 
 def get_date_instance_by_date(date: str):
+    if type(date) is not type('string'):
+        raise TypeError(f'date must be a string, not {type(date)}')
+    if not re.match(r'[0-2][0-9]{3}-[0|1][0-9]-[0-3][0-9]', date):
+        raise django.core.exceptions.ValidationError(f'invalid date format, expecting YYYY-MM-DD, got {date}')
     return Dates.objects.get(date=date)
 
 def get_latest_datapoint_by_company_id(company_id_instance):
@@ -176,7 +182,7 @@ def get_latest_entry_date_for_a_company_in_datapoints(company_symbol):
     if not latest_entry:
         return None
     logging.debug(f'get_latest_entry_date_for_a_company_in_datapoints(): data gathered={latest_entry, type(latest_entry)}')
-    return latest_entry[0].date_joined
+    return latest_entry[0].date_joined.isoformat()
 
 def get_latest_entry_date_in_datapoints():
     logging.debug(f'get_latest_entry_date_in_datapoints(): start of function, full dataset in datapoints={[entry for entry in Datapoints.objects.all()]}')

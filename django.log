@@ -1,0 +1,91 @@
+ERROR 2025-09-10 23:32:44,221 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 145, in detail_view_data_collector
+    date_instance = datapoint.dates  # Adjust this line as needed
+                    ^^^^^^^^^^^^^^^
+AttributeError: 'Datapoints' object has no attribute 'dates'. Did you mean: 'date'?
+ERROR 2025-09-10 23:32:44,223 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 73052
+ERROR 2025-09-10 23:33:46,463 log Internal Server Error: /main/detail/data_stream/2/365/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 139, in detail_view_data_collector
+    data.append(find_nearest_datapoint(datapoint_date, company_instance))
+                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 167, in find_nearest_datapoint
+    raise AssertionError(f'In attempting to find the nearest datapoint to {date.isoformat()} in DB for '
+                         f'{company_instance.symbol}, find_nearest_datapoint() came up with nothing within 7 days.')
+AssertionError: In attempting to find the nearest datapoint to 2025-09-10 in DB for AAPL, find_nearest_datapoint() came up with nothing within 7 days.
+ERROR 2025-09-10 23:33:46,465 basehttp "GET /main/detail/data_stream/2/365/1 HTTP/1.1" 500 78466
+ERROR 2025-09-10 23:34:17,811 log Internal Server Error: /main/data_stream
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 23, in main_data_stream
+    helpers.update_model()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 328, in update_model
+    add_time_series_daily_datapoint(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 81, in add_time_series_daily_datapoint
+    raise DataError(f'unexpected value type for datapoint entry {entry},  datapoint[{entry}]={datapoint[entry]}')
+django.db.utils.DataError: unexpected value type for datapoint entry 1. open,  datapoint[1. open]=259.6500
+ERROR 2025-09-10 23:34:17,813 basehttp "GET /main/data_stream HTTP/1.1" 500 83269
+ERROR 2025-09-10 23:41:48,855 log Internal Server Error: /main/data_stream
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 23, in main_data_stream
+    helpers.update_model()
+    ~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 329, in update_model
+    add_time_series_daily_datapoint(data["Time Series (Daily)"][datapoint], company_instance, date_instance)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 81, in add_time_series_daily_datapoint
+    raise DataError(f'unexpected value type for datapoint entry {entry},  datapoint[{entry}]={datapoint[entry]},'
+                    f' type: {type(datapoint[entry])}')
+django.db.utils.DataError: unexpected value type for datapoint entry 1. open,  datapoint[1. open]=259.6500, type: <class 'str'>
+ERROR 2025-09-10 23:41:48,857 basehttp "GET /main/data_stream HTTP/1.1" 500 83314
+ERROR 2025-09-11 04:51:45,187 log Internal Server Error: /main/detail/data_stream/10/365/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 141, in detail_view_data_collector
+    data.append(find_nearest_datapoint(datapoint_date, company_instance))
+                ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 169, in find_nearest_datapoint
+    raise AssertionError(f'In attempting to find the nearest datapoint to {date.isoformat()} in DB for '
+                         f'{company_instance.symbol}, find_nearest_datapoint() came up with nothing within 7 days.')
+AssertionError: In attempting to find the nearest datapoint to 2025-03-30 in DB for OPEN, find_nearest_datapoint() came up with nothing within 7 days.
+ERROR 2025-09-11 04:51:45,189 basehttp "GET /main/detail/data_stream/10/365/1 HTTP/1.1" 500 79183
+ERROR 2025-09-11 04:53:23,077 log Internal Server Error: /main/detail/data_stream/1/5/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 131, in detail_view_data_collector
+    static, period = 5 * 365
+    ^^^^^^^^^^^^^^
+TypeError: cannot unpack non-iterable int object
+ERROR 2025-09-11 04:53:23,078 basehttp "GET /main/detail/data_stream/1/5/1 HTTP/1.1" 500 72253

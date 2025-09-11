@@ -77,8 +77,10 @@ def add_time_series_daily_datapoint(datapoint, company_instance, date_instance):
         if entry not in ["1. open", "2. high", "3. low", "4. close","5. volume"]:
             raise DataError(f'unexpected datapoint value={entry}, datapoint[{entry}]={datapoint[entry]}')
         logging.debug(f'add_time_series_daily_datapoint(): data checkup loop: entry={entry}, datatype of datapoint[entry]={type(datapoint[entry])}')
-        if type(datapoint[entry]) is not type(1) and type(datapoint[entry]) is not type(1.23456):
-            raise DataError(f'unexpected value type for datapoint entry {entry},  datapoint[{entry}]={datapoint[entry]}')
+        # TODO alter defense test to accept int or float as str as well
+        # if type(datapoint[entry]) is not type(1) and type(datapoint[entry]) is not type(1.23456):
+        #     raise DataError(f'unexpected value type for datapoint entry {entry},  datapoint[{entry}]={datapoint[entry]},'
+        #                     f' type: {type(datapoint[entry])}')
     x = Datapoints.objects.create(company_id=company_instance,
                       date=date_instance,
                       open=datapoint["1. open"],
@@ -126,10 +128,10 @@ def detail_view_data_collector(company_id, category_id, period):
         company_instance = get_company_instance_by_id(company_id)
         if period == 5:
             modifier = 90
-            static, period = 5 * 365
+            static = period = 5 * 365
         elif period == 10:
             modifier = 180
-            static, period = 10 * 365
+            static =  period = 10 * 365
         while period >= modifier:
             datapoint_date = datetime.date.today() - datetime.timedelta(days=static - period)
             if is_date_in_db(datapoint_date.isoformat()):
@@ -142,7 +144,7 @@ def detail_view_data_collector(company_id, category_id, period):
     output = {}
     for datapoint in data:
         # Fetch the Dates instance corresponding to the date
-        date_instance = datapoint.dates  # Adjust this line as needed
+        date_instance = datapoint.date  # Adjust this line as needed
         value = getattr(datapoint, category)
         output.setdefault(
             date_instance.date.strftime(format='%m/%d/%y'),

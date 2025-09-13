@@ -30,5 +30,7 @@ def detail(request, company_id):
     return HttpResponse(render(request, template_name="detail.html", context=data))
 
 def detail_data_stream(request, company_id, category_id, period):
+    logging.warning(f'detail_data_stream(): API endpoint activated: call for company_id={company_id}, '
+                    f'category_id={category_id}, period={period}')
     output = helpers.detail_view_data_collector(company_id, category_id, period)
     return JsonResponse(output)

@@ -89,3 +89,236 @@ Traceback (most recent call last):
     ^^^^^^^^^^^^^^
 TypeError: cannot unpack non-iterable int object
 ERROR 2025-09-11 04:53:23,078 basehttp "GET /main/detail/data_stream/1/5/1 HTTP/1.1" 500 72253
+ERROR 2025-09-12 23:34:30,915 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 439, in detail_view_data_collector
+    date__date__gte=date.today() - timedelta(days=period_calculations[period])
+                    ^^^^
+NameError: name 'date' is not defined. Did you mean: 'Dates'?
+ERROR 2025-09-12 23:34:30,917 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 71632
+ERROR 2025-09-12 23:36:38,661 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 439, in detail_view_data_collector
+    date__date__gte=datetime.date.today() - timedelta(days=period_calculations[period])
+                    ^^^^
+NameError: name 'date' is not defined. Did you mean: 'Dates'?
+ERROR 2025-09-12 23:36:38,663 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 71913
+ERROR 2025-09-12 23:36:54,212 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 439, in detail_view_data_collector
+    dates__date__gte=datetime.date.today() - timedelta(days=period_calculations[period])
+                                             ^^^^^^^^^
+NameError: name 'timedelta' is not defined
+ERROR 2025-09-12 23:36:54,214 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 71996
+ERROR 2025-09-12 23:37:36,442 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 439, in detail_view_data_collector
+    dates__date__gte=datetime.date.today() - datetime.timedelta(days=period_calculations[period])
+                                             ^^^^^^^^^
+NameError: name 'timedelta' is not defined
+ERROR 2025-09-12 23:37:36,444 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 72014
+ERROR 2025-09-12 23:37:44,614 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 437, in detail_view_data_collector
+    data_dump = Datapoints.objects.filter(
+                ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        company_id=company_id,
+        ^^^^^^^^^^^^^^^^^^^^^^
+        dates__date__gte=datetime.date.today() - datetime.timedelta(days=period_calculations[period])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ).order_by('-dates__date')
+    ^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 1493, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 1511, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 1518, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1646, in add_q
+    clause, _ = self._add_q(q_object, can_reuse)
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1678, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ~~~~~~~~~~~~~~~~~^
+        child,
+        ^^^^^^
+    ...<7 lines>...
+        update_join_types=update_join_types,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1526, in build_filter
+    lookups, parts, reffed_expression = self.solve_lookup_type(arg, summarize)
+                                        ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1333, in solve_lookup_type
+    _, field, _, lookup_parts = self.names_to_path(lookup_splitted, self.get_meta())
+                                ~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1805, in names_to_path
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Cannot resolve keyword 'dates' into field. Choices are: close, company_id, company_id_id, date, date_id, high, id, low, open, volume
+ERROR 2025-09-12 23:37:44,618 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 121492
+ERROR 2025-09-12 23:38:53,064 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 437, in detail_view_data_collector
+    data_dump = Datapoints.objects.filter(
+                ~~~~~~~~~~~~~~~~~~~~~~~~~^
+        company_id=company_id,
+        ^^^^^^^^^^^^^^^^^^^^^^
+        date__dates__gte=datetime.date.today() - datetime.timedelta(days=period_calculations[period])
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ).order_by('-date__date')
+    ^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\manager.py", line 87, in manager_method
+    return getattr(self.get_queryset(), name)(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 1493, in filter
+    return self._filter_or_exclude(False, args, kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 1511, in _filter_or_exclude
+    clone._filter_or_exclude_inplace(negate, args, kwargs)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\query.py", line 1518, in _filter_or_exclude_inplace
+    self._query.add_q(Q(*args, **kwargs))
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1646, in add_q
+    clause, _ = self._add_q(q_object, can_reuse)
+                ~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1678, in _add_q
+    child_clause, needed_inner = self.build_filter(
+                                 ~~~~~~~~~~~~~~~~~^
+        child,
+        ^^^^^^
+    ...<7 lines>...
+        update_join_types=update_join_types,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1588, in build_filter
+    condition = self.build_lookup(lookups, col, value)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1402, in build_lookup
+    lhs = self.try_transform(lhs, name, lookups)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\db\models\sql\query.py", line 1458, in try_transform
+    raise FieldError(
+    ...<2 lines>...
+    )
+django.core.exceptions.FieldError: Unsupported lookup 'dates__gte' for ForeignKey or join on the field not permitted.
+ERROR 2025-09-12 23:38:53,068 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 123847
+ERROR 2025-09-12 23:39:28,646 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 441, in detail_view_data_collector
+    return package_json_data(data_dump, category_id)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 452, in package_json_data
+    {category: value, 'date': date_instance.date.strftime(format='%m/%d/%y')}
+     ^^^^^^^^
+NameError: name 'category' is not defined. Did you mean: 'category_id'?
+ERROR 2025-09-12 23:39:28,648 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 77017
+ERROR 2025-09-12 23:40:09,031 log Internal Server Error: /main/detail/data_stream/2/7/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 441, in detail_view_data_collector
+    return package_json_data(data_dump, category_id)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 452, in package_json_data
+    {category_map[category_id]: value, 'date': date_instance.date.strftime(format='%m/%d/%y')}
+     ^^^^^^^^
+NameError: name 'category' is not defined. Did you mean: 'category_id'?
+ERROR 2025-09-12 23:40:09,032 basehttp "GET /main/detail/data_stream/2/7/1 HTTP/1.1" 500 77051
+ERROR 2025-09-12 23:53:21,676 log Internal Server Error: /main/detail/data_stream/2/365/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 445, in detail_view_data_collector
+    return_data = package_json_data(data_dump, category_id)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 458, in package_json_data
+    data.date__date.strftime(format='%m/%d/%y'),
+    ^^^^^^^^^^^^^^^
+AttributeError: 'QuerySet' object has no attribute 'date__date'
+ERROR 2025-09-12 23:53:21,678 basehttp "GET /main/detail/data_stream/2/365/1 HTTP/1.1" 500 79329
+ERROR 2025-09-12 23:54:39,066 log Internal Server Error: /main/detail/data_stream/2/365/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 445, in detail_view_data_collector
+    return_data = package_json_data(data_dump, category_id)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 458, in package_json_data
+    data.dates__date.strftime(format='%m/%d/%y'),
+    ^^^^^^^^^^^^^^^^
+AttributeError: 'QuerySet' object has no attribute 'dates__date'
+ERROR 2025-09-12 23:54:39,068 basehttp "GET /main/detail/data_stream/2/365/1 HTTP/1.1" 500 79340
+ERROR 2025-09-12 23:57:38,646 log Internal Server Error: /main/detail/data_stream/2/365/1
+Traceback (most recent call last):
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\exception.py", line 55, in inner
+    response = get_response(request)
+  File "C:\Users\Mos\AppData\Local\Programs\Python\Python313\Lib\site-packages\django\core\handlers\base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\views.py", line 33, in detail_data_stream
+    output = helpers.detail_view_data_collector(company_id, category_id, period)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 445, in detail_view_data_collector
+    return_data = package_json_data(data_dump, category_id)
+  File "C:\Users\Mos\PycharmProjects\Stock_Analyst_WebApp\stock_analyst\helpers.py", line 458, in package_json_data
+    data.date.date.strftime(format='%m/%d/%y'),
+    ^^^^^^^^^
+AttributeError: 'QuerySet' object has no attribute 'date'. Did you mean: 'dates'?
+ERROR 2025-09-12 23:57:38,648 basehttp "GET /main/detail/data_stream/2/365/1 HTTP/1.1" 500 79292

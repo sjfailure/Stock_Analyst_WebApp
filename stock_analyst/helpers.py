@@ -97,60 +97,60 @@ def detail_build(company_id):
     page_data = {'company_id': company_info.id, 'company_name': company_info.company_name}
     return page_data
 
-def detail_view_data_collector(company_id, category_id, period):
-    if not isinstance(company_id, int) or company_id <= 0:
-        raise ValueError("Invalid company ID provided.")
-
-    if period is None:
-        raise ValueError("Invalid period ID provided.")
-
-    category_map = {1: 'high', 2: 'low', 3: 'open', 4: 'close', 5: 'volume'}
-    category = category_map.get(category_id)
-    if category is None:
-        raise ValueError("Invalid category ID provided.")
-    data = None
-
-    if period == 7 or period == 30:
-        number_of_entries = 7
-        if period == 30:
-            number_of_entries = 31
-        data = (
-            Datapoints.objects
-            .filter(company_id_id=company_id)
-            .select_related('date')  # Assuming 'date' is the related field name
-            .order_by('-date__date')  # Assuming 'date' is the related model's field
-            [:number_of_entries]  # Limit the number of entries
-        )
-    elif period == 365 or period == 5 or period == 10:
-        data = []
-        modifier = 15
-        static = 365
-        company_instance = get_company_instance_by_id(company_id)
-        if period == 5:
-            modifier = 90
-            static = period = 5 * 365
-        elif period == 10:
-            modifier = 180
-            static =  period = 10 * 365
-        while period >= modifier:
-            datapoint_date = datetime.date.today() - datetime.timedelta(days=static - period)
-            if is_date_in_db(datapoint_date.isoformat()):
-                date_instance = get_date_instance_by_date(datapoint_date.isoformat())
-                data.append(get_datapoint_by_date_and_company_instances(company_instance, date_instance))
-            else:
-                data.append(find_nearest_datapoint(datapoint_date, company_instance))
-            period -= modifier
-
-    output = {}
-    for datapoint in data:
-        # Fetch the Dates instance corresponding to the date
-        date_instance = datapoint.date  # Adjust this line as needed
-        value = getattr(datapoint, category)
-        output.setdefault(
-            date_instance.date.strftime(format='%m/%d/%y'),
-            {category: value, 'date': date_instance.date.strftime(format='%m/%d/%y')}
-        )
-    return output
+# def detail_view_data_collector(company_id, category_id, period):
+#     if not isinstance(company_id, int) or company_id <= 0:
+#         raise ValueError("Invalid company ID provided.")
+#
+#     if period is None:
+#         raise ValueError("Invalid period ID provided.")
+#
+#     category_map = {1: 'high', 2: 'low', 3: 'open', 4: 'close', 5: 'volume'}
+#     category = category_map.get(category_id)
+#     if category is None:
+#         raise ValueError("Invalid category ID provided.")
+#     data = None
+#
+#     if period == 7 or period == 30:
+#         number_of_entries = 7
+#         if period == 30:
+#             number_of_entries = 31
+#         data = (
+#             Datapoints.objects
+#             .filter(company_id_id=company_id)
+#             .select_related('date')  # Assuming 'date' is the related field name
+#             .order_by('-date__date')  # Assuming 'date' is the related model's field
+#             [:number_of_entries]  # Limit the number of entries
+#         )
+#     elif period == 365 or period == 5 or period == 10:
+#         data = []
+#         modifier = 15
+#         static = 365
+#         company_instance = get_company_instance_by_id(company_id)
+#         if period == 5:
+#             modifier = 90
+#             static = period = 5 * 365
+#         elif period == 10:
+#             modifier = 180
+#             static =  period = 10 * 365
+#         while period >= modifier:
+#             datapoint_date = datetime.date.today() - datetime.timedelta(days=static - period)
+#             if is_date_in_db(datapoint_date.isoformat()):
+#                 date_instance = get_date_instance_by_date(datapoint_date.isoformat())
+#                 data.append(get_datapoint_by_date_and_company_instances(company_instance, date_instance))
+#             else:
+#                 data.append(find_nearest_datapoint(datapoint_date, company_instance))
+#             period -= modifier
+#
+#     output = {}
+#     for datapoint in data:
+#         # Fetch the Dates instance corresponding to the date
+#         date_instance = datapoint.date  # Adjust this line as needed
+#         value = getattr(datapoint, category)
+#         output.setdefault(
+#             date_instance.date.strftime(format='%m/%d/%y'),
+#             {category: value, 'date': date_instance.date.strftime(format='%m/%d/%y')}
+#         )
+#     return output
 
 def find_nearest_datapoint(date: datetime.date, company_instance):
     modifier = 1
@@ -430,3 +430,36 @@ def update_model():
 #     return x
 #
 #
+
+def detail_view_data_collector(company_id, category_id, period):
+    """New attempt to rewrite detail_view_data_collector() to improve performance. """
+    x = datetime.datetime.now()
+    logging.warning(f'start of detail_view_data_collector(): current time = {str(x)}')
+    period_calculations = {7: 7, 30: 31, 365: 365, 5: 5*365, 10: 10*365}
+    data_dump = Datapoints.objects.filter(
+        company_id=company_id,
+        date__date__gte=datetime.date.today() - datetime.timedelta(days=period_calculations[period])
+    ).order_by('-date__date')
+    y = datetime.datetime.now()
+    logging.warning(f'middle of detail_view_data_collector(): time since start = {str(y - x)}')
+    return_data = package_json_data(data_dump, category_id)
+    logging.warning(f'end of detail_view_data_collector(): DB call time:{str(y - x)} -- data_packaging time: {str(datetime.datetime.now() - y)}')
+    return return_data
+
+category_map = {1: 'high', 2: 'low', 3: 'open', 4: 'close', 5: 'volume'}
+
+def package_json_data(data, category_id):
+    x = datetime.datetime.now()
+    logging.warning(f'start of package_json_data(): start time: {str(x)}')
+    output = {}
+    category = category_map[category_id]
+    y = datetime.datetime.now()
+    logging.warning(f'middle of package_json_data(): time since start: {str(y - x)}')
+    for datapoint in data:
+        # Fetch the Dates instance corresponding to the date
+        # date_instance = datapoint.date  # Adjust this line as needed
+        value = getattr(datapoint, category)
+        formatted_date = datapoint.date.date.strftime(format='%m/%d/%y')
+        output[formatted_date] = {category: value, 'date': formatted_date}
+    logging.warning(f'end of package_json_data(): time from start: {str(datetime.datetime.now() - x)} -- time from loop start: {str(datetime.datetime.now() - y)}')
+    return output
